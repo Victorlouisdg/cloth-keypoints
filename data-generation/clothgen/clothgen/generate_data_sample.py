@@ -9,9 +9,8 @@ from towel.generate_towel_scene import generate_scene
 
 
 def generate_data(output_dir, seed, resolution=256):
-    towel = generate_scene(seed)
+    cloth = generate_scene(seed)
     scene = bpy.context.scene
-    print("scene generated")
 
     image_name = f"{str(seed)}.png"
     image_path_relative = os.path.join("images", image_name)
@@ -22,12 +21,10 @@ def generate_data(output_dir, seed, resolution=256):
 
     scene.render.filepath = image_path
 
-    data = {
-        "image_path": image_path_relative,
-    }
+    data = {"image_path": image_path_relative, "class": cloth.classification_name}
 
-    keypoints_2D = towel.json_ready_keypoints(dimension=2, only_visible=True)
-    keypoints_2D_visible = towel.json_ready_keypoints(dimension=2, only_visible=False)
+    keypoints_2D = cloth.json_ready_keypoints(dimension=2, only_visible=True)
+    keypoints_2D_visible = cloth.json_ready_keypoints(dimension=2, only_visible=False)
 
     data = data | keypoints_2D | keypoints_2D_visible
 

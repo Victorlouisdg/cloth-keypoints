@@ -18,32 +18,6 @@ def get_random_filename(filedir):
     return random.choice(onlyfiles)
 
 
-class Towel(abt.KeypointedObject):
-    keypoint_ids = {"corner": [0, 1, 2, 3]}
-
-    def __init__(self, length, width):
-        self.width = width
-        self.length = length
-
-        mesh = self._create_mesh()
-        blender_obj = abt.make_object(name="Towel", mesh=mesh)
-        super().__init__(blender_obj, Towel.keypoint_ids)
-
-    def _create_mesh(self):
-        width, length = float(self.width), float(self.length)
-
-        vertices = [
-            np.array([-width / 2, -length / 2, 0.0]),
-            np.array([-width / 2, length / 2, 0.0]),
-            np.array([width / 2, length / 2, 0.0]),
-            np.array([width / 2, -length / 2, 0.0]),
-        ]
-        edges = [(0, 1), (1, 2), (2, 3), (3, 0)]
-        faces = [(0, 1, 2, 3)]
-
-        return vertices, edges, faces
-
-
 def generate_scene(seed):
     print(seed)
     os.environ["BLENDER_PROC_RANDOM_SEED"] = str(seed)
@@ -78,7 +52,7 @@ def generate_scene(seed):
     # create towel
     towel_length = np.random.uniform(0.4, 0.7)
     towel_width = np.random.uniform(0.2, towel_length)
-    towel = Towel(towel_length, towel_width)
+    towel = abt.Towel(towel_length, towel_width)
     towel.set_rotation_euler([0, 0, np.random.uniform(0.0, 2 * np.pi)])
     # shift towel in view
     x_shift = float(np.random.uniform(-0.1, 0.1))
