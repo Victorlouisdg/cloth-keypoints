@@ -2,7 +2,7 @@ repositories:
     airo_blender_toolkit:
         type: git
         url: https://github.com/airo-ugent/airo-blender-toolkit
-        version: 0541f59929560a1b5f34e21ea339a9de181bca1b
+        version: 0b3016b77e5cbdf0b7b46283979b6cf202892174
     blenderproc:
         type: git
         url: https://github.com/DLR-RM/BlenderProc

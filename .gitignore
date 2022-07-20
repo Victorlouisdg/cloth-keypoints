@@ -6,6 +6,7 @@
 **artifacts**
 .vscode/
 keypoints/validation_data
+*.code-workspace
 
 # dependency repos
 keypoint-detection/

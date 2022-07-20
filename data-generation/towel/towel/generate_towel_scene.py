@@ -2,7 +2,6 @@ import argparse
 import os
 import random
 import sys
-from pathlib import Path
 
 import airo_blender_toolkit as abt
 import bpy
@@ -55,10 +54,8 @@ def generate_scene(seed):
     bpy.context.scene.cycles.adaptive_threshold = 0.2
     bpy.context.scene.cycles.use_denoising = False
 
-    root_dir = Path(__file__).parents[2]
-    haven_folder = os.path.join(root_dir, "utils", "assets", "haven")
-    thingi_folder = os.path.join(root_dir, "utils", "assets", "thingi10")
-
+    haven_folder = os.path.join(abt.assets_path(), "haven")
+    thingi_folder = os.path.join(abt.assets_path(), "thingi10")
     haven_textures_folder = os.path.join(haven_folder, "textures")
 
     # create ground texture plane

@@ -1,15 +1,13 @@
 import os
 import subprocess
 
-# target dir for assets
-current_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-output_folder = os.path.join(current_dir, "assets", "haven")
-print(output_folder)
-if not os.path.exists(output_folder):
-    os.makedirs(output_folder)
+import airo_blender_toolkit as abt
+
+output_folder = os.path.join(abt.assets_path(), "haven")
 
 # blenderproc dir (make sure to change this if required)
-bproc_download_script = os.path.join(current_dir ,"blenderproc/blenderproc/scripts/download_haven.py")
+home = os.path.expanduser("~")
+bproc_download_script = os.path.join(home, "BlenderProc", "blenderproc", "scripts", "download_haven.py")
 resolution = "1k"
 types = "hdris textures"
 
