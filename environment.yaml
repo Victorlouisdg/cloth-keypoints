@@ -1,0 +1,18 @@
+name: cloth-comp
+channels:
+  - pytorch
+  - conda-forge
+dependencies:
+  - python=3.9
+  - pytorch=1.12
+  - cudatoolkit=11.3
+  - torchvision
+  - pip
+  - pip:
+    - wandb
+    - stable-baselines3
+    - pytorch-lightning
+    - pre-commit
+    - git+https://github.com/tlpss/camera-toolkit.git
+    - e git+https://github.com/airo-ugent/robotiq2F_tcp.git#egg=robotiq2F_tcp
+
