@@ -1,6 +1,6 @@
 import numpy as np
 from scipy.spatial.transform import Rotation as R
-from ur_robotiq_dual_arm_interface import UR, DualArmUR, RobotiqTCP
+from cloth_manipulation.ur_robotiq_dual_arm_interface import UR, DualArmUR, RobotiqTCP
 
 ip_victor = "10.42.0.162"
 ip_louise = "10.42.0.163"

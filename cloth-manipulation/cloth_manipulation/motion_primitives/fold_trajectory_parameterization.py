@@ -10,7 +10,7 @@ def transformation_matrix_from_position_and_vecs(pos, x, y, z):
     return transformation_matrix
 
 
-class FoldLine:
+class FoldTrajectory:
     def __init__(self, start: np.ndarray, end: np.ndarray) -> None:
 
         # create local Frame
@@ -50,7 +50,7 @@ class FoldLine:
         return wps
 
 
-class CircularFoldLine(FoldLine):
+class CircularFoldTrajectory(FoldTrajectory):
     def __init__(self, start, end) -> None:
         super().__init__(start, end)
 
@@ -87,7 +87,7 @@ class CircularFoldLine(FoldLine):
         return pregrasp_pose
 
 
-class VLFoldLine(FoldLine):
+class VLFoldLine(FoldTrajectory):
     def __init__(self, start: np.ndarray, end: np.ndarray) -> None:
         super().__init__(start, end)
         raise NotImplementedError
@@ -95,7 +95,7 @@ class VLFoldLine(FoldLine):
 
 
 if __name__ == "__main__":
-    s = CircularFoldLine(np.array([0.20, -0.2, 0.2]), np.array([0.2, 0.2, 0.2]))
+    s = CircularFoldTrajectory(np.array([0.20, -0.2, 0.2]), np.array([0.2, 0.2, 0.2]))
     print(s.get_pregrasp_pose())
     print(s.get_grasp_pose())
     print(s.get_fold_path(4))

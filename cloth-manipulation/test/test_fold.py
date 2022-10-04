@@ -2,7 +2,7 @@ import logging
 import time
 
 import numpy as np
-from fold_execution import execute_dual_fold_lines
+from cloth_manipulation.motion_primitives.fold import execute_dual_fold_lines
 from fold_line_parameterization import CircularFoldLine
 from scipy.spatial.transform import Rotation as R
 from ur_robotiq_dual_arm_interface import UR, DualArmUR, RobotiqTCP, RobotiqUSB
