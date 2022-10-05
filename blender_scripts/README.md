@@ -5,6 +5,13 @@ Also requires the `cloth_manipulation` package from this project to be installed
 
 ## Usage
 
+For the default towel:
 ```
 blender -P visualize_pull_primitive.py
+```
+
+
+For 16 random towels:
+```
+blender -P visualize_pull_primitive.py -- 16
 ```

@@ -1,7 +1,7 @@
 import numpy as np
 from camera_toolkit.reproject import reproject_to_world_z_plane
 from camera_toolkit.zed2i import Zed2i
-from cloth_manipulation.motion_primitives.pull import execute_pull_primitive, select_towel_pull
+from cloth_manipulation.motion_primitives.pull import execute_pull_primitive, TowelReorientPull
 from cloth_manipulation.setup_hw import setup_hw
 
 if __name__ == "__main__":
@@ -27,8 +27,8 @@ if __name__ == "__main__":
             keypoints_in_camera, zed.get_camera_matrix(), aruco_in_camera_transform
         )
 
-        pullprimitive = select_towel_pull(keypoints_in_world)
-        if np.linalg.norm(pullprimitive.start_position - pullprimitive.end_position) < 0.05:
+        pullprimitive = TowelReorientPull(keypoints_in_world)
+        if pullprimitive.average_corner_error() < 0.05:
             print("pull was less than 5cm, no need to execute")
             break
         print(pullprimitive)
