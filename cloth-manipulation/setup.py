@@ -1,7 +1,7 @@
-from setuptools import setup, find_packages
+from setuptools import find_packages, setup
 
 setup(
-    name='cloth_manipulation',
-    version='0.0.1',
-    packages=find_packages(),    
+    name="cloth_manipulation",
+    version="0.0.1",
+    packages=find_packages(),
 )

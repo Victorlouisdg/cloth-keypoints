@@ -37,6 +37,7 @@ class RobotiqTCP(Gripper):
     def close(self):
         return self.gripper.close()
 
+
 class UR:
     DEFAULT_LINEAR_VEL = 0.1  # m/s
     DEFAULT_LINEAR_ACC = 0.4  # m/s^2
@@ -50,8 +51,10 @@ class UR:
         self.gripper = gripper
 
         self.robot_in_world_position = np.array(robot_in_world_position)
-        self.home_pose = None # pose from which the robot can safely reach all manipulation poses and the out of way pose
-        self.out_of_way_pose = None # pose used for capturing images without occlusions bc of robot
+        self.home_pose = (
+            None  # pose from which the robot can safely reach all manipulation poses and the out of way pose
+        )
+        self.out_of_way_pose = None  # pose used for capturing images without occlusions bc of robot
 
     def _transform_world_pose_to_robot_frame(self, pose_in_world):
         assert isinstance(pose_in_world, np.ndarray)
@@ -62,7 +65,7 @@ class UR:
         pose_in_robot_frame[:3] = pose_in_robot_frame[:3] + world_to_robot_translation
         return pose_in_robot_frame
 
-    def check_is_not_necessarily_unsafe_pose(self,pose_in_robot_frame) -> None:
+    def check_is_not_necessarily_unsafe_pose(self, pose_in_robot_frame) -> None:
 
         unsafe = not self.rtde.isPoseWithinSafetyLimits(pose_in_robot_frame)
         if unsafe:

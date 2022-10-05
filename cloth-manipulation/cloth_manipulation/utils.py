@@ -1,7 +1,8 @@
-import numpy as np 
+import numpy as np
+
 
 def angle_2D(v0, v1):
-    #TODO: document. 
+    # TODO: document.
     x1, y1, *_ = v0
     x2, y2, *_ = v1
     dot = x1 * x2 + y1 * y2  # dot product between [x1, y1] and [x2, y2]

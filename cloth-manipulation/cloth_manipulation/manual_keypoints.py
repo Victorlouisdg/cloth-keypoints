@@ -1,11 +1,9 @@
+import pickle
+from pathlib import Path
+
 import cv2
 import numpy as np
 from camera_toolkit.zed2i import Zed2i
-
-from pathlib import Path
-import pickle
-
-
 
 # load camera to marker transform
 with open(Path(__file__).parent / "marker.pickle", "rb") as f:
@@ -19,7 +17,6 @@ aruco_in_camera_transform[:3, :3] = aruco_in_camera_orientation
 aruco_in_camera_transform[:3, 3] = aruco_in_camera_position
 
 
-
 def get_manual_keypoints(zed: Zed2i, num_keypoints: int = 4):
     """function to capture image and select some keypoints manually, which allows to test the folding w/o the state estimation"""
     # opencv mouseclick registration
@@ -30,7 +27,6 @@ def get_manual_keypoints(zed: Zed2i, num_keypoints: int = 4):
         if event == cv2.EVENT_LBUTTONDBLCLK:
             print(f"clicked on {x}, {y}")
             clicked_coords.append(np.array([x, y]))
-
 
     # capture image
     img = zed.get_rgb_image()
@@ -51,17 +47,17 @@ def get_manual_keypoints(zed: Zed2i, num_keypoints: int = 4):
 
     cv2.destroyAllWindows()
 
-
     return clicked_coords
 
 
 if __name__ == "__main__":
     from camera_toolkit.reproject import reproject_to_world_z_plane
 
-
     # open ZED (and assert it is available)
     Zed2i.list_camera_serial_numbers()
     zed = Zed2i()
     keypoints_in_camera = np.array(get_manual_keypoints(zed, 4))
-    keypoints_in_world = reproject_to_world_z_plane(keypoints_in_camera,zed.get_camera_matrix(),aruco_in_camera_transform)
+    keypoints_in_world = reproject_to_world_z_plane(
+        keypoints_in_camera, zed.get_camera_matrix(), aruco_in_camera_transform
+    )
     print(keypoints_in_world)
