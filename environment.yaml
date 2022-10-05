@@ -16,4 +16,3 @@ dependencies:
     - git+https://github.com/tlpss/camera-toolkit.git
     - e git+https://github.com/airo-ugent/robotiq2F_tcp.git#egg=robotiq2F_tcp
     - ur_rtde
-

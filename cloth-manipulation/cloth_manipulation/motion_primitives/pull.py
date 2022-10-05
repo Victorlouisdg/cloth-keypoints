@@ -1,53 +1,54 @@
 from typing import List
+
 import numpy as np
 from cloth_manipulation.ur_robotiq_dual_arm_interface import DualArmUR, homogeneous_pose_to_position_and_rotvec
 from cloth_manipulation.utils import get_ordered_keypoints
+
+
 class PullPrimitive:
-    def __init__(self, start: np.ndarray, end:np.ndarray) -> None:
+    def __init__(self, start: np.ndarray, end: np.ndarray) -> None:
         self.start_position = start
         self.end_position = end
 
-
         # top down gripper orientation
         self.gripper_orientation = np.eye(3)
-        self.gripper_orientation[2,2] = -1
-        self.gripper_orientation[0,0] = -1
+        self.gripper_orientation[2, 2] = -1
+        self.gripper_orientation[0, 0] = -1
 
     def get_pre_grasp_pose(self):
         pregrasp_pose = self.get_pull_start_pose()
-        pregrasp_pose[2,3] += 0.05
+        pregrasp_pose[2, 3] += 0.05
         return pregrasp_pose
 
     def get_pull_start_pose(self):
         start_pose = np.eye(4)
-        start_pose[:3,:3] = self.gripper_orientation
-        start_pose [:3,3] = self.start_position
+        start_pose[:3, :3] = self.gripper_orientation
+        start_pose[:3, 3] = self.start_position
         return start_pose
 
     def get_pull_end_pose(self):
         end_pose = np.eye(4)
-        end_pose[:3,:3] = self.gripper_orientation
-        end_pose [:3,3] = self.end_position
+        end_pose[:3, :3] = self.gripper_orientation
+        end_pose[:3, 3] = self.end_position
         return end_pose
 
     def get_pull_retreat_pose(self):
         retreat_pose = self.get_pull_end_pose()
-        retreat_pose[2,3] += 0.05
+        retreat_pose[2, 3] += 0.05
         return retreat_pose
 
     def __repr__(self) -> str:
         return f"{self.start_position=} -> {self.end_position=}"
 
+
 def select_towel_pull(corners: List[np.ndarray], margin=0.05) -> PullPrimitive:
     def vector_cosine(v0, v1):
         return np.dot(v0, v1) / np.linalg.norm(v0) / np.linalg.norm(v1)
 
-
-
     def closest_point(point, candidates):
         distances = [np.linalg.norm(point - candidate) for candidate in candidates]
         return candidates[np.argmin(distances)]
-    
+
     corners = np.array(corners)
     towel_center = np.mean(corners, axis=0)
 
@@ -109,24 +110,29 @@ def select_towel_pull(corners: List[np.ndarray], margin=0.05) -> PullPrimitive:
 
     start = corner + margin_vector
     end = destination + margin_vector
-    return PullPrimitive(start,end)
-
+    return PullPrimitive(start, end)
 
 
 def execute_pull_primitive(pull_primitive: PullPrimitive, dual_arm: DualArmUR):
 
     # decide which robot to use
-    reachable_by_victor = dual_arm.victor_ur.is_world_pose_reachable(homogeneous_pose_to_position_and_rotvec(pull_primitive.get_pull_start_pose())) and dual_arm.victor_ur.is_world_pose_reachable(homogeneous_pose_to_position_and_rotvec(pull_primitive.get_pull_end_pose()))
+    reachable_by_victor = dual_arm.victor_ur.is_world_pose_reachable(
+        homogeneous_pose_to_position_and_rotvec(pull_primitive.get_pull_start_pose())
+    ) and dual_arm.victor_ur.is_world_pose_reachable(
+        homogeneous_pose_to_position_and_rotvec(pull_primitive.get_pull_end_pose())
+    )
     if reachable_by_victor:
         ur = dual_arm.victor_ur
     else:
         ur = dual_arm.louise_ur
 
-    ur.gripper.gripper.move_to_position(200) # little bit more compliant if finger tips don't touch
+    ur.gripper.gripper.move_to_position(200)  # little bit more compliant if finger tips don't touch
     # go to home pose
-    ur.moveL(ur.home_pose, vel = 2*ur.DEFAULT_LINEAR_VEL)
+    ur.moveL(ur.home_pose, vel=2 * ur.DEFAULT_LINEAR_VEL)
     # go to prepull pose
-    ur.moveL(homogeneous_pose_to_position_and_rotvec(pull_primitive.get_pre_grasp_pose()), vel = 2*ur.DEFAULT_LINEAR_VEL)
+    ur.moveL(
+        homogeneous_pose_to_position_and_rotvec(pull_primitive.get_pre_grasp_pose()), vel=2 * ur.DEFAULT_LINEAR_VEL
+    )
     # move down
     ur.moveL(homogeneous_pose_to_position_and_rotvec(pull_primitive.get_pull_start_pose()))
 
@@ -135,9 +141,6 @@ def execute_pull_primitive(pull_primitive: PullPrimitive, dual_arm: DualArmUR):
 
     # move up
     ur.moveL(homogeneous_pose_to_position_and_rotvec(pull_primitive.get_pull_retreat_pose()))
-    
+
     # move to home pose
-    ur.moveL(ur.home_pose, vel = 2*ur.DEFAULT_LINEAR_VEL)
-
-
-
+    ur.moveL(ur.home_pose, vel=2 * ur.DEFAULT_LINEAR_VEL)
