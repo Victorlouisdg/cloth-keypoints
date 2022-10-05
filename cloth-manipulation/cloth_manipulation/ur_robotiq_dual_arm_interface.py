@@ -42,18 +42,6 @@ class RobotiqTCP(Gripper):
     def close(self):
         return self.gripper.close()
 
-
-class RobotiqUSB(Gripper):
-    def __init__(self) -> None:
-        super().__init__()
-
-    def open(self):
-        pass
-
-    def close(self):
-        pass
-
-
 class UR:
     """simple wrapper around the RTDE interface"""
 
@@ -79,6 +67,10 @@ class UR:
         unsafe = unsafe or np.linalg.norm(pose_in_robot_frame[:3]) < 0.2
         if unsafe:
             raise ValueError(f"this pose:{pose_in_robot_frame} would most likely lead to a collision!")
+
+    def is_world_pose_reachable(self, pose_in_world_frame: np.ndarray) -> bool:
+        robot_pose = self._transform_world_pose_to_robot_frame(pose_in_world_frame)
+        return self.rtde.isPoseWithinSafetyLimits(robot_pose)
 
     def moveL(self, pose_in_world_frame: np.array, vel=DEFAULT_LINEAR_VEL, acc=DEFAULT_LINEAR_ACC):
         pose_in_robot_frame = self._transform_world_pose_to_robot_frame(pose_in_world_frame)

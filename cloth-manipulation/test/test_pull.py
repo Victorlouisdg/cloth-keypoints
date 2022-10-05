@@ -8,7 +8,8 @@ if __name__ == "__main__":
     #pullprimitive = PullPrimitive(np.array([0,-0.1,0.1]),np.array([0,0.1,0.1]))
 
     # test towel on 4th quadrant
-    pullprimitive = select_towel_pull([np.array([0.0,0.0,0.01]),np.array([0.23,0.0,0.01]),np.array([0.23,-0.3,0.01]),np.array([0.0,-0.3,0.01])])
+
+    pullprimitive = select_towel_pull([np.array([0.0,0.0,0.0]),np.array([0.23,0.0,0.0]),np.array([0.23,-0.3,0.0]),np.array([0.0,-0.3,0.0])])
     print(pullprimitive)
     execute_pull_primitive(pullprimitive,dual_arm.victor_ur)
     dual_arm.dual_moveJ_IK(home_victor_waypoint,home_waypoint_louise)

@@ -1,8 +1,7 @@
 from typing import List
 import numpy as np
-from cloth_manipulation.ur_robotiq_dual_arm_interface import UR, homogeneous_pose_to_position_and_rotvec
-from cloth_manipulation.setup_hw import setup_hw, home_victor_waypoint, home_waypoint_louise
-
+from cloth_manipulation.ur_robotiq_dual_arm_interface import UR, DualArmUR, homogeneous_pose_to_position_and_rotvec
+from cloth_manipulation.utils import get_ordered_keypoints
 class PullPrimitive:
     def __init__(self, start: np.ndarray, end:np.ndarray) -> None:
         self.start_position = start
@@ -43,26 +42,6 @@ def select_towel_pull(corners: List[np.ndarray], margin=0.05) -> PullPrimitive:
     def vector_cosine(v0, v1):
         return np.dot(v0, v1) / np.linalg.norm(v0) / np.linalg.norm(v1)
 
-
-    def angle_2D(v0, v1):
-        x1, y1, *_ = v0
-        x2, y2, *_ = v1
-        dot = x1 * x2 + y1 * y2  # dot product between [x1, y1] and [x2, y2]
-        det = x1 * y2 - y1 * x2  # determinant
-        angle = np.arctan2(det, dot)  # atan2(y, x) or atan2(sin, cos)
-        return angle
-
-
-    def get_ordered_keypoints(keypoints):
-        keypoints = np.array(keypoints)
-        keypoint0 = keypoints[0]
-        keypoints_remaining = keypoints[1:]
-
-        angles = [angle_2D(keypoint0, keypoint) for keypoint in keypoints_remaining]
-        angles = [angle % (2 * np.pi) for angle in angles]  # make angles positive from 0 to 2*pi
-        keypoints_remaining_sorted = keypoints_remaining[np.argsort(angles)]
-        keypoints_sorted = np.row_stack([keypoint0[np.newaxis, :], keypoints_remaining_sorted])
-        return list(keypoints_sorted)
 
 
     def closest_point(point, candidates):
@@ -134,7 +113,15 @@ def select_towel_pull(corners: List[np.ndarray], margin=0.05) -> PullPrimitive:
 
 
 
-def execute_pull_primitive(pull_primitive: PullPrimitive, ur: UR):
+def execute_pull_primitive(pull_primitive: PullPrimitive, dual_arm: DualArmUR):
+
+    # decide which robot to use
+    reachable_by_victor = dual_arm.victor_ur.is_world_pose_reachable(pull_primitive.start_position) and dual_arm.victor_ur.is_world_pose_reachable(pull_primitive.end_position)
+    if reachable_by_victor:
+        ur = dual_arm.victor_ur
+    else:
+        ur = dual_arm.louise_ur
+
     ur.gripper.close()
     # go to prepull pose
     ur.moveJ_IK(homogeneous_pose_to_position_and_rotvec(pull_primitive.get_pre_grasp_pose()))
