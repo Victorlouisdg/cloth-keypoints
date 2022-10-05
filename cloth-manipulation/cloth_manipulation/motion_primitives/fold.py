@@ -2,11 +2,8 @@ import logging
 from typing import List
 
 import numpy as np
-from fold_line_parameterization import FoldLine
-from ur_robotiq_dual_arm_interface import (
-    DEFAULT_BLEND,
-    DEFAULT_LINEAR_ACC,
-    DEFAULT_LINEAR_VEL,
+from cloth_manipulation.motion_primitives.fold_trajectory_parameterization import FoldTrajectory
+from cloth_manipulation.ur_robotiq_dual_arm_interface import (
     UR,
     DualArmUR,
     homogeneous_pose_to_position_and_rotvec,
@@ -21,13 +18,15 @@ def make_robot_formatted_trajectory_from_path(path: List[np.ndarray]):
     for pose in path:
         waypoint = np.array(
             list(homogeneous_pose_to_position_and_rotvec(pose))
-            + [DEFAULT_LINEAR_VEL, DEFAULT_LINEAR_ACC, DEFAULT_BLEND]
+            + [UR.DEFAULT_LINEAR_VEL, UR.DEFAULT_LINEAR_ACC, UR.DEFAULT_BLEND]
         )
         trajectory_in_robot_format.append(waypoint)
     return trajectory_in_robot_format
 
 
-def execute_single_fold_line(fold_line: FoldLine, robot: UR):
+def execute_single_fold_line(fold_line: FoldTrajectory, robot: UR):
+
+    robot.moveL(robot.home_pose, vel = 2* robot.DEFAULT_LINEAR_VEL)
     # move to pregrasp
     pregrasp_pose = homogeneous_pose_to_position_and_rotvec(fold_line.get_pregrasp_pose())
     logger.debug(f"{pregrasp_pose=}")
@@ -44,9 +43,13 @@ def execute_single_fold_line(fold_line: FoldLine, robot: UR):
     # release
     robot.moveL(homogeneous_pose_to_position_and_rotvec(fold_line.get_fold_retreat_pose()))
     robot.gripper.open()
+    robot.moveL(robot.home_pose, vel = 2* robot.DEFAULT_LINEAR_VEL)
 
+def execute_dual_fold_lines(fold_line_victor: FoldTrajectory, fold_line_louise: FoldTrajectory, dual_arm: DualArmUR):
 
-def execute_dual_fold_lines(fold_line_victor: FoldLine, fold_line_louise: FoldLine, dual_arm: DualArmUR):
+    # move to home pose
+    dual_arm.dual_moveL(dual_arm.victor_ur.home_pose, dual_arm.louise_ur.home_pose,vel=2*dual_arm.DEFAULT_LINEAR_VEL)
+
     # move to pregrasp
     dual_arm.dual_moveL(
         homogeneous_pose_to_position_and_rotvec(fold_line_victor.get_pregrasp_pose()),
@@ -75,3 +78,6 @@ def execute_dual_fold_lines(fold_line_victor: FoldLine, fold_line_louise: FoldLi
     )
     dual_arm.victor_ur.gripper.open()
     dual_arm.louise_ur.gripper.open()
+
+    # move to home pose
+    dual_arm.dual_moveL(dual_arm.victor_ur.home_pose, dual_arm.louise_ur.home_pose,vel=2*UR.DEFAULT_LINEAR_VEL)

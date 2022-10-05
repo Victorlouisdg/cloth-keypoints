@@ -1,6 +1,6 @@
 from typing import List
 import numpy as np
-from cloth_manipulation.ur_robotiq_dual_arm_interface import UR, DualArmUR, homogeneous_pose_to_position_and_rotvec
+from cloth_manipulation.ur_robotiq_dual_arm_interface import DualArmUR, homogeneous_pose_to_position_and_rotvec
 from cloth_manipulation.utils import get_ordered_keypoints
 class PullPrimitive:
     def __init__(self, start: np.ndarray, end:np.ndarray) -> None:
@@ -116,15 +116,17 @@ def select_towel_pull(corners: List[np.ndarray], margin=0.05) -> PullPrimitive:
 def execute_pull_primitive(pull_primitive: PullPrimitive, dual_arm: DualArmUR):
 
     # decide which robot to use
-    reachable_by_victor = dual_arm.victor_ur.is_world_pose_reachable(pull_primitive.start_position) and dual_arm.victor_ur.is_world_pose_reachable(pull_primitive.end_position)
+    reachable_by_victor = dual_arm.victor_ur.is_world_pose_reachable(homogeneous_pose_to_position_and_rotvec(pull_primitive.get_pull_start_pose())) and dual_arm.victor_ur.is_world_pose_reachable(homogeneous_pose_to_position_and_rotvec(pull_primitive.get_pull_end_pose()))
     if reachable_by_victor:
         ur = dual_arm.victor_ur
     else:
         ur = dual_arm.louise_ur
 
-    ur.gripper.close()
+    ur.gripper.gripper.move_to_position(200) # little bit more compliant if finger tips don't touch
+    # go to home pose
+    ur.moveL(ur.home_pose, vel = 2*ur.DEFAULT_LINEAR_VEL)
     # go to prepull pose
-    ur.moveJ_IK(homogeneous_pose_to_position_and_rotvec(pull_primitive.get_pre_grasp_pose()))
+    ur.moveL(homogeneous_pose_to_position_and_rotvec(pull_primitive.get_pre_grasp_pose()), vel = 2*ur.DEFAULT_LINEAR_VEL)
     # move down
     ur.moveL(homogeneous_pose_to_position_and_rotvec(pull_primitive.get_pull_start_pose()))
 
@@ -133,6 +135,9 @@ def execute_pull_primitive(pull_primitive: PullPrimitive, dual_arm: DualArmUR):
 
     # move up
     ur.moveL(homogeneous_pose_to_position_and_rotvec(pull_primitive.get_pull_retreat_pose()))
+    
+    # move to home pose
+    ur.moveL(ur.home_pose, vel = 2*ur.DEFAULT_LINEAR_VEL)
 
 
 

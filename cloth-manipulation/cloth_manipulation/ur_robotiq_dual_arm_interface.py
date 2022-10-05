@@ -6,12 +6,6 @@ from robotiq2f import Robotiq2F85TCP
 from rtde_control import RTDEControlInterface as RTDEControl
 from scipy.spatial.transform import Rotation as R
 
-DEFAULT_LINEAR_VEL = 0.1  # m/s
-DEFAULT_LINEAR_ACC = 0.1  # m/s^2
-DEFAULT_JOINT_VEL = 0.3  # rad/s
-DEFAULT_JOINT_ACC = 0.1  # rad/s^2
-DEFAULT_BLEND = 0.01
-
 
 def homogeneous_pose_to_position_and_rotvec(pose: np.ndarray):
     """converts a 4x4 homogeneous pose to [x,y,z, x_rot,y_rot,z_rot]"""
@@ -38,11 +32,17 @@ class RobotiqTCP(Gripper):
 
     def open(self):
         return self.gripper.open()
+        self.gripper.move_to_position()
 
     def close(self):
         return self.gripper.close()
 
 class UR:
+    DEFAULT_LINEAR_VEL = 0.01  # m/s
+    DEFAULT_LINEAR_ACC = 0.7  # m/s^2
+    DEFAULT_JOINT_VEL = 0.4  # rad/s
+    DEFAULT_JOINT_ACC = 0.8  # rad/s^2
+    DEFAULT_BLEND = 0.01
     """simple wrapper around the RTDE interface"""
 
     def __init__(self, ip: str, gripper: Gripper = None, robot_in_world_position=[0, 0, 0]):
@@ -50,6 +50,8 @@ class UR:
         self.gripper = gripper
 
         self.robot_in_world_position = np.array(robot_in_world_position)
+        self.home_pose = None # pose from which the robot can safely reach all manipulation poses and the out of way pose
+        self.out_of_way_pose = None # pose used for capturing images without occlusions bc of robot
 
     def _transform_world_pose_to_robot_frame(self, pose_in_world):
         assert isinstance(pose_in_world, np.ndarray)
@@ -60,11 +62,13 @@ class UR:
         pose_in_robot_frame[:3] = pose_in_robot_frame[:3] + world_to_robot_translation
         return pose_in_robot_frame
 
-    @staticmethod
-    def check_is_not_necessarily_unsafe_pose(pose_in_robot_frame):
+    def check_is_not_necessarily_unsafe_pose(self,pose_in_robot_frame) -> None:
 
-        unsafe = np.linalg.norm(pose_in_robot_frame[:3]) > 0.5
-        unsafe = unsafe or np.linalg.norm(pose_in_robot_frame[:3]) < 0.2
+        unsafe = not self.rtde.isPoseWithinSafetyLimits(pose_in_robot_frame)
+        if unsafe:
+            raise ValueError(f"this pose:{pose_in_robot_frame} is not reachable!")
+
+        unsafe = np.linalg.norm(pose_in_robot_frame[:3]) < 0.2
         if unsafe:
             raise ValueError(f"this pose:{pose_in_robot_frame} would most likely lead to a collision!")
 
@@ -91,6 +95,11 @@ class UR:
 
 
 class DualArmUR:
+    DEFAULT_LINEAR_VEL = UR.DEFAULT_LINEAR_VEL
+    DEFAULT_LINEAR_ACC = UR.DEFAULT_LINEAR_ACC
+    DEFAULT_JOINT_VEL = UR.DEFAULT_JOINT_VEL
+    DEFAULT_JOINT_ACC = UR.DEFAULT_JOINT_ACC
+    DEFAULT_BLEND = UR.DEFAULT_BLEND
     """
     Idea of this class is mainly to enable synchronous execution of motions on both robots in the dual-arm setup.
     e.g. you want to move the robots each to a pose and wait untill they have both arrived.

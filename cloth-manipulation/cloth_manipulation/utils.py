@@ -1,6 +1,5 @@
 import numpy as np 
 
-
 def angle_2D(v0, v1):
     #TODO: document. 
     x1, y1, *_ = v0

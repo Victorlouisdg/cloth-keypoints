@@ -47,7 +47,7 @@ class FoldTrajectory:
             wp = self._fold_pose(t)
             wps.append(wp)
 
-        return wps
+        return np.array(wps)
 
 
 class CircularFoldTrajectory(FoldTrajectory):
@@ -64,11 +64,7 @@ class CircularFoldTrajectory(FoldTrajectory):
         position = np.array(
             [(self.len / 2.2 - 0.02) * np.cos(position_angle), 0, (self.len / 2.2 - 0.02) * np.sin(position_angle)]
         )
-
-        position[2] -= 0.03  # gripper is opened here so point of fingers is now this amount above closed-TCP
-        position[2] -= 0.01  # offset of the mounting plate
-        position[2] += 0.005  # thickness of grasping plate
-        position[2] += 0.085 / 2 * np.sin(np.pi / 4)  # want the low finger to touch the table so offset from TCP
+        position[2] += 0.085 / 2 * np.sin(np.pi / 5)  # want the low finger to touch the table so offset from TCP
 
         orientation_angle = max(np.pi / 5 - t * np.pi, -np.pi / 6)
         x = np.array([np.cos(orientation_angle), 0, np.sin(orientation_angle)])
