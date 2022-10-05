@@ -38,11 +38,11 @@ class RobotiqTCP(Gripper):
         return self.gripper.close()
 
 class UR:
-    DEFAULT_LINEAR_VEL = 0.01  # m/s
-    DEFAULT_LINEAR_ACC = 0.7  # m/s^2
+    DEFAULT_LINEAR_VEL = 0.1  # m/s
+    DEFAULT_LINEAR_ACC = 0.4  # m/s^2
     DEFAULT_JOINT_VEL = 0.4  # rad/s
     DEFAULT_JOINT_ACC = 0.8  # rad/s^2
-    DEFAULT_BLEND = 0.01
+    DEFAULT_BLEND = 0.00001
     """simple wrapper around the RTDE interface"""
 
     def __init__(self, ip: str, gripper: Gripper = None, robot_in_world_position=[0, 0, 0]):
