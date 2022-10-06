@@ -41,76 +41,118 @@ class PullPrimitive:
         return f"{self.start_position=} -> {self.end_position=}"
 
 
-def select_towel_pull(corners: List[np.ndarray], margin=0.05) -> PullPrimitive:
+class TowelReorientPull(PullPrimitive):
+    def __init__(self, corners, inset_amount=0.05):
+        self.corners = corners
+        self.start_original, self.end_original = self.select_towel_pull(corners)
+        self.start, self.end = self.inset_pull(inset_amount)
+        super().__init__(self.start, self.end)
+
+    @staticmethod
     def vector_cosine(v0, v1):
         return np.dot(v0, v1) / np.linalg.norm(v0) / np.linalg.norm(v1)
 
+    @staticmethod
     def closest_point(point, candidates):
         distances = [np.linalg.norm(point - candidate) for candidate in candidates]
         return candidates[np.argmin(distances)]
 
-    corners = np.array(corners)
-    towel_center = np.mean(corners, axis=0)
+    @staticmethod
+    def get_desired_corners_and_short_edges(ordered_corners):
+        edges = [(i, (i + 1) % 4) for i in range(4)]
+        edge_lengths = [np.linalg.norm(ordered_corners[id0] - ordered_corners[id1]) for (id0, id1) in edges]
+        edge_pairs = [(0, 2), (1, 3)]
+        edge_pairs_mean_length = []
+        for eid0, eid1 in edge_pairs:
+            edge_length_mean = np.mean([edge_lengths[eid0], edge_lengths[eid1]])
+            edge_pairs_mean_length.append(edge_length_mean)
 
-    corners = get_ordered_keypoints(corners)
-    edges = [(i, (i + 1) % 4) for i in range(4)]
+        short_edge_pair = edge_pairs[np.argmin(edge_pairs_mean_length)]
+        short_edges = [edges[eid] for eid in short_edge_pair]
 
-    edge_lengths = [np.linalg.norm(corners[id0] - corners[id1]) for (id0, id1) in edges]
+        # By convention widht is smaller than length
+        towel_width = min(edge_pairs_mean_length)
+        towel_length = max(edge_pairs_mean_length)
 
-    edge_pairs = [(0, 2), (1, 3)]
-    edge_pairs_mean_length = []
-    for eid0, eid1 in edge_pairs:
-        edge_length_mean = np.mean([edge_lengths[eid0], edge_lengths[eid1]])
-        edge_pairs_mean_length.append(edge_length_mean)
+        # We want the short edges parallel to the x-axis
+        tx = towel_width / 2
+        ty = towel_length / 2
+        desired_corners = [
+            np.array([tx, ty, 0]),
+            np.array([-tx, ty, 0]),
+            np.array([-tx, -ty, 0]),
+            np.array([tx, -ty, 0]),
+        ]
+        return desired_corners, short_edges
 
-    short_edge_pair = edge_pairs[np.argmin(edge_pairs_mean_length)]
-    short_edges = [edges[eid] for eid in short_edge_pair]
+    @staticmethod
+    def get_corner_destination_candidates(corners, desired_corners, short_edges):
+        corner_candidates = []
+        for edge in short_edges:
+            id0, id1 = edge
+            corner0 = corners[id0]
+            corner1 = corners[id1]
+            corner_candidates.append((corner0, [desired_corners[0], desired_corners[2]]))
+            corner_candidates.append((corner1, [desired_corners[1], desired_corners[3]]))
 
-    # By convention widht is smaller than length
-    towel_width = min(edge_pairs_mean_length)
-    towel_length = max(edge_pairs_mean_length)
+        return corner_candidates
 
-    # We want the short edges parallel to the x-axis
-    tx = towel_width / 2
-    ty = towel_length / 2
-    desired_corners = [
-        np.array([tx, ty, 0]),
-        np.array([-tx, ty, 0]),
-        np.array([-tx, -ty, 0]),
-        np.array([tx, -ty, 0]),
-    ]
+    @staticmethod
+    def get_closest_corner_destination(corner_destination_candidates):
+        corner_destinations = []
+        for corner, destination_candidates in corner_destination_candidates:
+            destination = TowelReorientPull.closest_point(corner, destination_candidates)
+            corner_destinations.append((corner, destination))
+        return corner_destinations
 
-    corner_destination_pairs = []
-    for edge in short_edges:
-        id0, id1 = edge
-        corner0 = corners[id0]
-        corner0_options = [desired_corners[0], desired_corners[2]]
-        destination0 = closest_point(corner0, corner0_options)
+    @staticmethod
+    def select_best_corner_destination(corner_destinations, towel_center):
+        cosines = []
+        for corner, destination in corner_destinations:
+            center_to_corner = corner - towel_center
+            corner_to_destination = destination - corner
+            cosine = TowelReorientPull.vector_cosine(center_to_corner, corner_to_destination)
+            cosines.append(cosine)
 
-        corner1 = corners[id1]
-        corner1_options = [desired_corners[1], desired_corners[3]]
-        destination1 = closest_point(corner1, corner1_options)
+        best_pair = corner_destinations[np.argmax(cosines)]
+        return best_pair
 
-        corner_destination_pairs.append((corner0, destination0))
-        corner_destination_pairs.append((corner1, destination1))
+    def select_towel_pull(self, corners):
+        corners = np.array(corners)
+        corners = get_ordered_keypoints(corners)
 
-    cosines = []
-    for corner, destination in corner_destination_pairs:
-        center_to_corner = corner - towel_center
-        corner_to_destination = destination - corner
-        cosine = vector_cosine(center_to_corner, corner_to_destination)
-        cosines.append(cosine)
+        desired_corners, short_edges = TowelReorientPull.get_desired_corners_and_short_edges(corners)
+        self.desired_corners = desired_corners  # Stored for visualization of checks for completion
 
-    best_pair = corner_destination_pairs[np.argmax(cosines)]
-    corner, destination = best_pair
+        corner_destination_candidates = TowelReorientPull.get_corner_destination_candidates(
+            corners, desired_corners, short_edges
+        )
+        self.corner_destination_candidates = corner_destination_candidates  # Stored for visualization of
 
-    corner_to_center = towel_center - corner
-    corner_to_center_unit = corner_to_center / np.linalg.norm(corner_to_center)
-    margin_vector = corner_to_center_unit * margin
+        corner_destinations = TowelReorientPull.get_closest_corner_destination(self.corner_destination_candidates)
+        self.corner_destinations = corner_destinations
 
-    start = corner + margin_vector
-    end = destination + margin_vector
-    return PullPrimitive(start, end)
+        towel_center = np.mean(corners, axis=0)
+        corner, destination = TowelReorientPull.select_best_corner_destination(corner_destinations, towel_center)
+
+        start = corner
+        end = destination  # + margin_vector
+        return start, end
+
+    def inset_pull(self, margin=0.05):
+        """Moves the start and end positions toward the center of the towel. 
+           This can increae robustness to keypoint detection inaccuracy."""
+        corners = np.array(self.corners)
+        towel_center = np.mean(corners, axis=0)
+        start_to_center = towel_center - self.start_original
+        start_to_center_unit = start_to_center / np.linalg.norm(start_to_center)
+        margin_vector = start_to_center_unit * margin
+        start = self.start_original + margin_vector
+        end = self.end_original + margin_vector
+        return start, end
+
+    def average_corner_error(self):
+        return np.mean([np.linalg.norm(corner, destination) for corner, destination in self.corner_destinations])
 
 
 def execute_pull_primitive(pull_primitive: PullPrimitive, dual_arm: DualArmUR):
