@@ -1,9 +1,6 @@
-from re import M
-from typing import List
-
 import numpy as np
 from cloth_manipulation.ur_robotiq_dual_arm_interface import DualArmUR, homogeneous_pose_to_position_and_rotvec
-from cloth_manipulation.utils import get_ordered_keypoints, get_short_and_long_edges, angle_2D, rotate_point
+from cloth_manipulation.utils import angle_2D, get_ordered_keypoints, get_short_and_long_edges, rotate_point
 
 
 class PullPrimitive:
@@ -40,6 +37,25 @@ class PullPrimitive:
 
     def __repr__(self) -> str:
         return f"{self.start_position=} -> {self.end_position=}"
+
+
+class OrientedPullPrimitive(PullPrimitive):
+    def __init__(self, start: np.ndarray, end: np.ndarray) -> None:
+        self.start_position = start
+        self.end_position = end
+
+        # top down gripper orientation
+        self.gripper_orientation = np.eye(3)
+        self.gripper_orientation[2, 2] = -1
+        self.gripper_orientation[0, 0] = -1
+
+    def get_pull_start_pose(self):
+        # TODO: orient according to X-value to increase range
+        raise NotImplementedError
+
+    def get_pull_end_pose(self):
+        # TODO: orient according to X-value to increase range
+        raise NotImplementedError
 
 
 class TowelReorientPull(PullPrimitive):
@@ -125,7 +141,9 @@ class TowelReorientPull(PullPrimitive):
         return start, end
 
     def average_corner_error(self):
-        return np.mean([np.linalg.norm(corner - desired) for corner, desired in self.desired_corners])
+        return np.mean(
+            [np.linalg.norm(corner - desired) for corner, desired in zip(self.ordered_corners, self.desired_corners)]
+        )
 
 
 def execute_pull_primitive(pull_primitive: PullPrimitive, dual_arm: DualArmUR):
@@ -162,6 +180,6 @@ def execute_pull_primitive(pull_primitive: PullPrimitive, dual_arm: DualArmUR):
 
     # move up
     ur.moveL(homogeneous_pose_to_position_and_rotvec(pull_primitive.get_pull_retreat_pose()))
-
+    ur.gripper.gripper.open()
     # move to home pose
     ur.moveL(ur.home_pose, vel=2 * ur.DEFAULT_LINEAR_VEL)
