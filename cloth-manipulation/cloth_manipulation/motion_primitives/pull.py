@@ -116,10 +116,16 @@ def select_towel_pull(corners: List[np.ndarray], margin=0.05) -> PullPrimitive:
 def execute_pull_primitive(pull_primitive: PullPrimitive, dual_arm: DualArmUR):
 
     # decide which robot to use
-    reachable_by_victor = dual_arm.victor_ur.is_world_pose_reachable(
-        homogeneous_pose_to_position_and_rotvec(pull_primitive.get_pull_start_pose())
-    ) and dual_arm.victor_ur.is_world_pose_reachable(
-        homogeneous_pose_to_position_and_rotvec(pull_primitive.get_pull_end_pose())
+    reachable_by_victor = (
+        dual_arm.victor_ur.is_world_pose_reachable(
+            homogeneous_pose_to_position_and_rotvec(pull_primitive.get_pull_start_pose())
+        )
+        and dual_arm.victor_ur.is_world_pose_reachable(
+            homogeneous_pose_to_position_and_rotvec(pull_primitive.get_pull_end_pose())
+        )
+        and dual_arm.victor_ur.is_world_pose_reachable(
+            homogeneous_pose_to_position_and_rotvec(pull_primitive.get_pull_retreat_pose())
+        )
     )
     if reachable_by_victor:
         ur = dual_arm.victor_ur
