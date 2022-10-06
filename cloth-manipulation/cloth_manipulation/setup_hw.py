@@ -29,8 +29,8 @@ def setup_hw() -> DualArmUR:
     gripper_victor = RobotiqTCP(ip_victor)
     gripper_louise = RobotiqTCP(ip_louise)
 
-    victor = UR(ip_victor, gripper_victor, [-0.39, 0.0, +0.006])
-    louise = UR(ip_louise, gripper_louise, [0.39, 0.0, +0.006])
+    victor = UR(ip_victor, gripper_victor, [-0.39, 0.0, +0.007])
+    louise = UR(ip_louise, gripper_louise, [0.39, 0.0, +0.007])
 
     victor.out_of_way_pose = out_of_way_pose_victor
     victor.home_pose = home_pose_victor

@@ -64,9 +64,13 @@ class CircularFoldTrajectory(FoldTrajectory):
         position = np.array(
             [(self.len / 2.2 - 0.02) * np.cos(position_angle), 0, (self.len / 2.2 - 0.02) * np.sin(position_angle)]
         )
-        position[2] += 0.085 / 2 * np.sin(np.pi / 5)  # want the low finger to touch the table so offset from TCP
 
-        orientation_angle = max(np.pi / 5 - t * 2 * np.pi / 5, -np.pi / 6)
+        grasp_angle = np.pi / 5
+        # bring finger tip down to zero.
+        position[2] += (0.085 / 2 * np.sin(grasp_angle) -0.008) * np.cos(grasp_angle) # want the low finger to touch the table so offset from TCP
+        position[2] -= 0.008 # 8mm compliance for better grasping
+        
+        orientation_angle = max(grasp_angle - t * 2 * np.pi / 5, -np.pi / 6)
         x = np.array([np.cos(orientation_angle), 0, np.sin(orientation_angle)])
         x /= np.linalg.norm(x)
         y = np.array([0, -1, 0])

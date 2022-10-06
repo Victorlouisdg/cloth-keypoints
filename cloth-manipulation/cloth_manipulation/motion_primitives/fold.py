@@ -70,13 +70,14 @@ def execute_dual_fold_lines(fold_line_victor: FoldTrajectory, fold_line_louise: 
     trajectory_louise = make_robot_formatted_trajectory_from_path(path_louise)
     dual_arm.dual_moveP(trajectory_victor, trajectory_louise)
 
+    dual_arm.victor_ur.gripper.open()
+    dual_arm.louise_ur.gripper.open()
     # release
     dual_arm.dual_moveL(
         homogeneous_pose_to_position_and_rotvec(fold_line_victor.get_fold_retreat_pose()),
         homogeneous_pose_to_position_and_rotvec(fold_line_louise.get_fold_retreat_pose()),
     )
-    dual_arm.victor_ur.gripper.open()
-    dual_arm.louise_ur.gripper.open()
+
 
     # move to home pose
     dual_arm.dual_moveL(dual_arm.victor_ur.home_pose, dual_arm.louise_ur.home_pose, vel=2 * UR.DEFAULT_LINEAR_VEL)

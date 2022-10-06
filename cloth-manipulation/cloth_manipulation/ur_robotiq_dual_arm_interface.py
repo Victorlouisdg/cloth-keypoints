@@ -43,7 +43,7 @@ class UR:
     DEFAULT_LINEAR_ACC = 0.4  # m/s^2
     DEFAULT_JOINT_VEL = 0.4  # rad/s
     DEFAULT_JOINT_ACC = 0.8  # rad/s^2
-    DEFAULT_BLEND = 0.00001
+    DEFAULT_BLEND = 0.01
     """simple wrapper around the RTDE interface"""
 
     def __init__(self, ip: str, gripper: Gripper = None, robot_in_world_position=[0, 0, 0]):
@@ -130,7 +130,7 @@ class DualArmUR:
 
     def dual_moveP(self, trajectory_in_world_victor: List[np.ndarray], trajectory_in_world_louise: List[np.ndarray]):
         self._dual_arm_sync_exec(
-            self.victor_ur.moveP, self.louise_ur.moveP, trajectory_in_world_victor, trajectory_in_world_louise
+            self.victor_ur.moveP, self.louise_ur.moveP, (trajectory_in_world_victor,), (trajectory_in_world_louise,)
         )
 
     def dual_moveJ_IK(
