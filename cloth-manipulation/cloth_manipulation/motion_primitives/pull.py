@@ -152,7 +152,7 @@ class TowelReorientPull(PullPrimitive):
         return start, end
 
     def average_corner_error(self):
-        return np.mean([np.linalg.norm(corner, destination) for corner, destination in self.corner_destinations])
+        return np.mean([np.linalg.norm(corner - destination) for corner, destination in self.corner_destinations])
 
 
 def execute_pull_primitive(pull_primitive: PullPrimitive, dual_arm: DualArmUR):
