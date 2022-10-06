@@ -41,13 +41,8 @@ class FoldTrajectory:
         return pose
 
     def get_fold_path(self, n_waypoints: int = 50):
-        wps = []
-        for i in range(0, n_waypoints):
-            t = i / n_waypoints
-            wp = self._fold_pose(t)
-            wps.append(wp)
-
-        return np.array(wps)
+        waypoints = [self._fold_pose(completion) for completion in np.linspace(0, 1, n_waypoints)]
+        return np.array(waypoints)
 
 
 class CircularFoldTrajectory(FoldTrajectory):

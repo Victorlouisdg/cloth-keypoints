@@ -44,22 +44,46 @@ def visualize_robots_base_plates(robots_center=(0, 0, 0)):
         base.add_colored_material([0.25, 0.25, 0.25, 1.000000])
 
 
-def visualize_fold_trajectory(corners):
+def visualize_fold_trajectory(fold_trajectory):
+    visualization_objects = []
+
+    for transform in fold_trajectory.get_fold_path(10):
+        empty = abt.visualize_transform(transform, scale=0.02)
+        visualization_objects.append(empty)
+
+
+    pregrasp = fold_trajectory.get_pregrasp_pose()
+    empty = abt.visualize_transform(pregrasp, scale=0.05)
+    empty.name = "pregrasp"
+    visualization_objects.append(empty)
+
+    grasp = fold_trajectory.get_grasp_pose()
+    empty = abt.visualize_transform(grasp, scale=0.05)
+    empty.name = "grasp"
+    visualization_objects.append(empty)
+
+    end = fold_trajectory._fold_pose(1.0)
+    empty = abt.visualize_transform(end, scale=0.05)
+    empty.name = "end"
+    visualization_objects.append(empty)
+
+    retreat = fold_trajectory.get_fold_retreat_pose()
+    empty = abt.visualize_transform(retreat, scale=0.05)
+    empty.name = "retreat"
+    visualization_objects.append(empty)
+
+    return visualization_objects
+
+
+def visualize_fold_trajectories(corners):
     corners = get_ordered_keypoints(corners)
     end_louise, end_victor, start_victor, start_louise = corners
     fold_trajectory_victor = CircularFoldTrajectory(start_victor, end_victor)
     fold_trajectory_louise = CircularFoldTrajectory(start_louise, end_louise)
 
     visualization_objects = []
-    for transform in fold_trajectory_victor.get_fold_path(8):
-        empty = abt.visualize_transform(transform)
-        visualization_objects.append(empty)
-
-
-    for transform in fold_trajectory_louise.get_fold_path(8):
-        empty = abt.visualize_transform(transform, scale=0.05)
-        visualization_objects.append(empty)
-
+    visualization_objects += visualize_fold_trajectory(fold_trajectory_victor)
+    visualization_objects += visualize_fold_trajectory(fold_trajectory_louise)
     return visualization_objects
 
 
@@ -69,9 +93,10 @@ if __name__ == "__main__":
         # Default towel
         visualize_robots_base_plates()
         towel = default_towel()
+        towel.visualize_keypoints(radius=0.005)
         keypoints = {"corner": list(towel.keypoints_3D.values())}
         corners = keypoints["corner"]
-        visualize_fold_trajectory(corners)
+        visualize_fold_trajectories(corners)
     else:
         argv = sys.argv[sys.argv.index("--") + 1 :]
         parser = argparse.ArgumentParser()
@@ -88,14 +113,15 @@ if __name__ == "__main__":
             y = -shift * (i // columns)
             offset = Vector((x, y, 0))
 
-            sphere = abt.Sphere(location=offset, radius=0.005)
-            sphere.add_colored_material((0,0,1,1))
+            sphere = abt.Sphere(location=offset, radius=0.001)
+            sphere.add_colored_material((0, 0, 1, 1))
 
             visualize_robots_base_plates(offset)
             towel = random_towel(i)
+            towel.visualize_keypoints(radius=0.005)
             keypoints = {"corner": list(towel.keypoints_3D.values())}
             corners = keypoints["corner"]
-            visualization_objects = visualize_fold_trajectory(corners)
+            visualization_objects = visualize_fold_trajectories(corners)
 
             towel.location += offset
             for object in visualization_objects:
