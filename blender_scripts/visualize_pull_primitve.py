@@ -11,9 +11,12 @@ def default_towel() -> abt.Towel:
     towel_length = 0.3
     towel_width = 0.2
     towel = abt.Towel(towel_length, towel_width)
-    towel.location = 0.02, 0.05, 0.0
-    towel.location = towel_width / 2, -towel_length / 2, 0.0
+    # towel.location = 0.02, 0.05, 0.0
+    # towel.location = 0.0, 0.3, 0.0
+    towel.location = 0.3, 0.3, 0.0
+    # towel.location = towel_width / 2, -towel_length / 2, 0.0
     towel.rotation_euler = 0, 0, np.pi / 16
+    # towel.rotation_euler = 0, 0, np.pi / 2
     towel.apply_transforms()
     return towel
 
@@ -56,15 +59,20 @@ def visualize_pull_primitve(corners):
         sphere.blender_object.name = f"desired_corner_{i}"
         visualization_objects.append(sphere)
 
-    for corner, destination in pullprimitive.corner_destinations:
-        line = abt.visualize_line_segment(corner, destination, thickness=0.002, color=abt.colors.light_blue)
+    for i in range(4):
+        sphere = abt.Sphere(location=pullprimitive.ordered_corners[i], radius=0.01)
+        sphere.add_colored_material([1, 0, 0, 1])
+        sphere.blender_object.name = f"desired_corner_{i}"
+        visualization_objects.append(sphere)
+
+    for corner, desired in zip(pullprimitive.ordered_corners, pullprimitive.desired_corners):
+        line = abt.visualize_line_segment(corner, desired, thickness=0.002, color=abt.colors.light_blue)
         visualization_objects.append(line)
 
     selected_line = abt.visualize_line_segment(
         pullprimitive.start_original, pullprimitive.end_original, color=(0, 1, 0, 1)
     )
     visualization_objects.append(selected_line)
-
     return visualization_objects
 
 
