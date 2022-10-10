@@ -8,6 +8,6 @@ dependencies:
   - pip:
     - pre-commit
     - git+https://github.com/tlpss/camera-toolkit.git
-    - -e git+https://github.com/airo-ugent/robotiq2F_tcp.git#egg=robotiq2F_tcp
+    - -e git+https://github.com/airo-ugent/robotiq2F_tcp.git#egg=robotiq2F
     - ur_rtde
-    - git+https://github.com/tlpss/keypoint-detection.git#testset_support
+    - git+https://github.com/tlpss/keypoint-detection.git
