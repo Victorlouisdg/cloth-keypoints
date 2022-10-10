@@ -71,7 +71,7 @@ class UR:
         if unsafe:
             raise ValueError(f"this pose:{pose_in_robot_frame} is not reachable!")
 
-        unsafe = np.linalg.norm(pose_in_robot_frame[:3]) < 0.2
+        unsafe = np.linalg.norm(pose_in_robot_frame[:3]) < 0.1
         if unsafe:
             raise ValueError(f"this pose:{pose_in_robot_frame} would most likely lead to a collision!")
 

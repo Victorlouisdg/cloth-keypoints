@@ -45,6 +45,19 @@ def reorient_towel(zed: Zed2i, dual_arm: DualArmUR, keypoint_detector: torch.nn.
         dual_arm.victor_ur.home_pose, dual_arm.louise_ur.home_pose, vel=2 * dual_arm.DEFAULT_LINEAR_VEL
     )
 
+def inset_short_edge(left:np.array,right:np.array, margin =  0.04):
+    """
+    Inset the folding keypoints over the short distance (so end-end or start-start)
+    for more robust folding.
+    """
+    direction = left-right
+    direction /= np.linalg.norm(direction)
+
+    left -= margin * direction
+    right += margin  * direction
+
+    return left, right
+    
 
 def fold_towel_once(zed: Zed2i, dual_arm: DualArmUR, keypoint_detector: torch.nn.Module = None):
     
@@ -54,6 +67,10 @@ def fold_towel_once(zed: Zed2i, dual_arm: DualArmUR, keypoint_detector: torch.nn
     corners = np.array(keypoints_in_world)
     corners = get_ordered_keypoints(corners)
     end_louise, end_victor, start_victor, start_louise = corners
+
+    end_louise, end_victor = inset_short_edge(end_louise, end_victor)
+    start_louise, start_victor = inset_short_edge(start_louise, start_victor)
+
     fold_trajectory_victor = CircularFoldTrajectory(start_victor, end_victor)
     fold_trajectory_louise = CircularFoldTrajectory(start_louise, end_louise)
 

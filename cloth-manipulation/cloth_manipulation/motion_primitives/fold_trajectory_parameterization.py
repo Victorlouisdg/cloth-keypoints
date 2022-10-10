@@ -56,18 +56,19 @@ class CircularFoldTrajectory(FoldTrajectory):
         assert t <= 1 and t >= 0
         position_angle = np.pi - t * np.pi
         # the radius was manually tuned on a cloth to find a balance between grasp width along the cloth and grasp robustness given the gripper fingers.
+        radius = (self.len / 2.0-0.015)
         position = np.array(
-            [(self.len / 2.2 - 0.02) * np.cos(position_angle), 0, (self.len / 2.2 - 0.02) * np.sin(position_angle)]
+            [  radius* np.cos(position_angle), 0, radius * np.sin(position_angle)]
         )
 
-        grasp_angle = np.pi / 5
+        grasp_angle = np.pi / 10
         # bring finger tip down to zero.
         position[2] += (0.085 / 2 * np.sin(grasp_angle) - 0.008) * np.cos(
             grasp_angle
         )  # want the low finger to touch the table so offset from TCP
         position[2] -= 0.008  # 8mm compliance for better grasping
 
-        orientation_angle = max(grasp_angle - t * 2 * np.pi / 5, -np.pi / 6)
+        orientation_angle = max(grasp_angle - t * 2 * grasp_angle, -np.pi / 6)
         x = np.array([np.cos(orientation_angle), 0, np.sin(orientation_angle)])
         x /= np.linalg.norm(x)
         y = np.array([0, -1, 0])
@@ -75,7 +76,7 @@ class CircularFoldTrajectory(FoldTrajectory):
         z = np.cross(x, y)
         return self.fold_frame_in_robot_frame @ transformation_matrix_from_position_and_vecs(position, x, y, z)
 
-    def get_pregrasp_pose(self, offset=0.05):
+    def get_pregrasp_pose(self, offset=0.02):
         grasp_pose = self._fold_pose(0)
         pregrasp_pose = grasp_pose
         # create offset in y-axis for grasp approach (linear motion along +y)

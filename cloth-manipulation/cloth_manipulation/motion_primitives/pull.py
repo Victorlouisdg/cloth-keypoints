@@ -68,9 +68,9 @@ class TowelReorientPull(PullPrimitive):
         return np.column_stack([X, Y, Z])
 
     @staticmethod
-    def tilted_pull_orientation(pull_location, robot_location, tilt_angle=30):
+    def tilted_pull_orientation(pull_location, robot_location, tilt_angle=15):
         robot_to_pull = pull_location - robot_location
-        if np.linalg.norm(robot_to_pull) < 0.4:
+        if np.linalg.norm(robot_to_pull) < 0.35:
             tilt_angle = -tilt_angle # tilt inwards
         gripper_open_direction = robot_to_pull
         top_down = TowelReorientPull.top_down_orientation(gripper_open_direction)
