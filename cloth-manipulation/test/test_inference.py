@@ -10,6 +10,7 @@ import torch
 from keypoint_detection.models.detector import KeypointDetector
 from keypoint_detection.models.backbones.convnext_unet import ConvNeXtUnet
 from keypoint_detection.utils.visualization import overlay_image_with_heatmap
+from keypoint_detection.utils.heatmap import get_keypoints_from_heatmap
 
 
 def get_wandb_model(checkpoint_reference, backbone=ConvNeXtUnet()):
@@ -24,8 +25,6 @@ def get_wandb_model(checkpoint_reference, backbone=ConvNeXtUnet()):
     model = KeypointDetector.load_from_checkpoint(model_path, backbone=backbone)
     return model
 
-
-green_cv2 = (0, 255, 0)
 
 serial_numbers = {
     "top": 38633712,
@@ -44,7 +43,7 @@ def draw_cloth_transform_rectangle(image_full_size) -> np.ndarray:
     bottom_right = (u_bottom, v_bottom)
 
     image = cv2.rectangle(
-        image_full_size, top_left, bottom_right, green_cv2, thickness=2
+        image_full_size, top_left, bottom_right, (255, 0, 0), thickness=2
     )
     return image
 
@@ -95,9 +94,19 @@ while True:
         heatmap = keypoint_detector(image_batched)
 
     heatmap_channel_batched = heatmap.squeeze(1)
+    heatmap_channel = heatmap_channel_batched.squeeze(0)
+
     overlayed = overlay_image_with_heatmap(image_batched, heatmap_channel_batched)
     overlayed = overlayed.squeeze(0).numpy()
     overlayed = zed.image_shape_torch_to_opencv(overlayed)
+    overlayed = overlayed.copy()
+
+    keypoints = get_keypoints_from_heatmap(
+        heatmap_channel.cpu(), min_keypoint_pixel_distance=4, max_keypoints=4
+    )
+    for keypoint in keypoints:
+        overlayed = cv2.circle(overlayed, keypoint, 6, (0, 1, 0))
+
     overlayed *= 255.0
     overlayed = overlayed.astype(np.uint8)  # copy()
 
