@@ -63,9 +63,15 @@ class ResizeKeypointImageTransform(KeypointImageTransform):
         return keypoint_batch
 
 
-class ClothTransform:
-    crop_transform = CropKeypointImageTransform(800, 1000, 200, 1000)
-    resize_transform = ResizeKeypointImageTransform((1000, 1000), (256, 256))
+class ClothTransform():
+    crop_start_u = 800
+    crop_start_v = 200
+    crop_height = 1000
+    crop_width = 1000 
+    resize_height = 256
+    resize_width = 256
+    crop_transform = CropKeypointImageTransform(crop_start_u, crop_width, crop_start_v, crop_height)
+    resize_transform = ResizeKeypointImageTransform((crop_height, crop_width), (resize_height, resize_width))
 
     @staticmethod
     def transform_image(img: np.ndarray):
