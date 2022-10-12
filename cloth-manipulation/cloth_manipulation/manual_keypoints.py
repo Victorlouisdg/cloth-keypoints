@@ -36,7 +36,11 @@ class CropKeypointImageTransform(KeypointImageTransform):
 
     def transform_image(self, img_batch: np.ndarray):
         assert len(img_batch.shape) == 3, "expecting shape C x H x W "
-        return img_batch[:, self._start_v : self._start_v + self._height, self._start_u : self._start_u + self._width]
+        return img_batch[
+            :,
+            self._start_v : self._start_v + self._height,
+            self._start_u : self._start_u + self._width,
+        ]
 
     def transform_keypoints(self, keypoint_batch: np.ndarray):
         # keypoints are now in (U,V) coordinates instead of (V,U) (HxW)
@@ -58,31 +62,45 @@ class ResizeKeypointImageTransform(KeypointImageTransform):
         return self.resize_transform(img_tensor).numpy()
 
     def transform_keypoints(self, keypoint_batch: np.ndarray):
-        keypoint_batch[:, 0] = keypoint_batch[:, 0] * self._original_dims[0] / self._target_dims[0]
-        keypoint_batch[:, 1] = keypoint_batch[:, 1] * self._original_dims[1] / self._target_dims[1]
+        keypoint_batch[:, 0] = (
+            keypoint_batch[:, 0] * self._original_dims[0] / self._target_dims[0]
+        )
+        keypoint_batch[:, 1] = (
+            keypoint_batch[:, 1] * self._original_dims[1] / self._target_dims[1]
+        )
         return keypoint_batch
 
 
-class ClothTransform():
+class ClothTransform:
     crop_start_u = 800
     crop_start_v = 200
     crop_height = 1000
-    crop_width = 1000 
+    crop_width = 1000
     resize_height = 256
     resize_width = 256
-    crop_transform = CropKeypointImageTransform(crop_start_u, crop_width, crop_start_v, crop_height)
-    resize_transform = ResizeKeypointImageTransform((crop_height, crop_width), (resize_height, resize_width))
+
+    @classmethod
+    def crop_transform(cls):
+        return CropKeypointImageTransform(
+            cls.crop_start_u, cls.crop_width, cls.crop_start_v, cls.crop_height
+        )
+
+    @classmethod
+    def resize_transform(cls):
+        return ResizeKeypointImageTransform(
+            (cls.crop_height, cls.crop_width), (cls.resize_height, cls.resize_width)
+        )
 
     @staticmethod
     def transform_image(img: np.ndarray):
-        img = ClothTransform.crop_transform.transform_image(img)
-        img = ClothTransform.resize_transform.transform_image(img)
+        img = ClothTransform.crop_transform().transform_image(img)
+        img = ClothTransform.resize_transform().transform_image(img)
         return img.astype(np.uint8)
 
     @staticmethod
     def reverse_transform_keypoints(keypoints: np.ndarray):
-        return ClothTransform.crop_transform.transform_keypoints(
-            ClothTransform.resize_transform.transform_keypoints(keypoints)
+        return ClothTransform.crop_transform().transform_keypoints(
+            ClothTransform.resize_transform().transform_keypoints(keypoints)
         )
 
 
@@ -102,7 +120,9 @@ def get_manual_keypoints(img: np.ndarray, num_keypoints: int = 4):
     cv2.setMouseCallback("img", clicked_callback_cv)
 
     while True:
-        print(f"double click to select{num_keypoints} a keypoint; press any key after you are finished")
+        print(
+            f"double click to select{num_keypoints} a keypoint; press any key after you are finished"
+        )
 
         cv2.waitKey(0)
         if len(clicked_coords) > num_keypoints:
@@ -140,7 +160,9 @@ if __name__ == "__main__":
     transformed_cv_img = Zed2i.image_shape_torch_to_opencv(transformed_image)
     transformed_keypoints = np.array(get_manual_keypoints(transformed_cv_img, 4))
 
-    keypoints_in_camera = ClothTransform.reverse_transform_keypoints(transformed_keypoints)
+    keypoints_in_camera = ClothTransform.reverse_transform_keypoints(
+        transformed_keypoints
+    )
     print(f"{keypoints_in_camera=}")
 
     keypoints_in_world = reproject_to_world_z_plane(
