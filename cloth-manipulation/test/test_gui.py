@@ -2,17 +2,13 @@ from camera_toolkit.zed2i import Zed2i
 import cv2
 import pyzed.sl as sl
 import numpy as np
+import cloth_manipulation.camera_mapping as cm
 
-serial_numbers = {
-    "top": 38633712,
-    "side": 35357320,
-    "front": 31733653,
-}
 resolution = sl.RESOLUTION.HD720
 
-zed_top = Zed2i(resolution=resolution, serial_number=serial_numbers["top"])
-zed_side = Zed2i(resolution=resolution, serial_number=serial_numbers["side"])
-zed_front = Zed2i(resolution=resolution, serial_number=serial_numbers["front"])
+zed_top = Zed2i(resolution=resolution, serial_number=cm.CameraMapping.serial_top)
+zed_side = Zed2i(resolution=resolution, serial_number=cm.CameraMapping.serial_side)
+zed_front = Zed2i(resolution=resolution, serial_number=cm.CameraMapping.serial_front)
 
 zeds = [zed_top, zed_side, zed_front]
 

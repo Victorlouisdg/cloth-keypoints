@@ -8,6 +8,7 @@ import numpy as np
 import torch
 import torchvision
 from camera_toolkit.zed2i import Zed2i
+import cloth_manipulation.camera_mapping as cm
 
 # load camera to marker transform
 with open(Path(__file__).parent / "marker.pickle", "rb") as f:
@@ -140,7 +141,7 @@ if __name__ == "__main__":
 
     # open ZED (and assert it is available)
     Zed2i.list_camera_serial_numbers()
-    zed = Zed2i()
+    zed = Zed2i(serial_number=cm.CameraMapping.serial_top)
     # capture image
     torch_img = zed.get_rgb_image()
     img = zed.image_shape_torch_to_opencv(torch_img)

@@ -14,6 +14,9 @@ class FakeRobot:
         self.gripper = gripper
         self.robot_in_world_position = robot_in_world_position
 
+    def is_world_pose_reachable(self, *args):
+        return True
+
 
 class FakeDualArm:
     def __init__(self, victor, louise) -> None:

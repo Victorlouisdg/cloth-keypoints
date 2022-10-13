@@ -4,15 +4,9 @@ import cv2
 import pyzed.sl as sl
 from cloth_manipulation.manual_keypoints import ClothTransform
 import numpy as np
+import cloth_manipulation.camera_mapping as cm
 
 green_cv2 = (0, 255, 0)
-
-serial_numbers = {
-    "top": 38633712,
-    "side": 35357320,
-    "front": 31733653,
-}
-
 
 def draw_cloth_transform_rectangle(image_full_size) -> np.ndarray:
     u_top = ClothTransform.crop_start_u
@@ -41,8 +35,8 @@ def draw_center_circle(image) -> np.ndarray:
 
 resolution = sl.RESOLUTION.HD720
 
-zed = Zed2i(resolution=resolution, serial_number=serial_numbers["top"])
-image = zed.get_rgb_image("right")
+zed = Zed2i(resolution=resolution, serial_number=cm.CameraMapping.serial_top)
+image = zed.get_rgb_image()
 image = zed.image_shape_torch_to_opencv(image)
 
 print("image_shape", image.shape)
