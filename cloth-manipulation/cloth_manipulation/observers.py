@@ -44,5 +44,5 @@ class KeypointObserver():
         image = image.copy()
 
         for keypoint in self.keypoints:
-            image = cv2.circle(image, keypoint, 6, (0, 255, 0))
+            image = cv2.circle(image, keypoint, 5, (0, 255, 0))
         return image

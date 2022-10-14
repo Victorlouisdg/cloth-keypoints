@@ -138,14 +138,21 @@ class TowelReorientPull(PullPrimitive):
 
     def inset_pull_positions(self, margin=0.05):
         """Moves the start and end positions toward the center of the towel.
-        This can increae robustness to keypoint detection inaccuracy."""
+        This can increase robustness to keypoint detection inaccuracy."""
         corners = np.array(self.corners)
         towel_center = np.mean(corners, axis=0)
         start_to_center = towel_center - self.start_original
         start_to_center_unit = start_to_center / np.linalg.norm(start_to_center)
-        margin_vector = start_to_center_unit * margin
-        start = self.start_original + margin_vector
-        end = self.end_original + margin_vector
+        start_margin_vector = start_to_center_unit * margin
+        start = self.start_original + start_margin_vector
+
+
+        desired_corners = np.array(self.desired_corners)
+        desired_towel_center = np.mean(desired_corners, axis=0)
+        end_to_center = desired_towel_center - self.end_original
+        end_to_center_unit = end_to_center / np.linalg.norm(end_to_center)
+        end_margin_vector = end_to_center_unit * margin
+        end = self.end_original + end_margin_vector
         return start, end
 
     def average_corner_error(self):

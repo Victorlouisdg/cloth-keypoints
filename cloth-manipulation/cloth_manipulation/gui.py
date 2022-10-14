@@ -1,3 +1,4 @@
+from cloth_manipulation.motion_primitives.pull import TowelReorientPull
 import numpy as np
 import cv2
 from cloth_manipulation.manual_keypoints import ClothTransform
@@ -104,4 +105,44 @@ def draw_world_axes(image, world_to_camera, camera_matrix):
 
     z_pos = project_world_to_image_plane([0.0, 0.0, 1.0], world_to_camera, camera_matrix).astype(int)
     image = cv2.line(image, z_pos.T, origin.T, color=(255, 0, 0), thickness=2)
+    return image
+
+
+def visualize_towel_reorient_pull(image, pull: TowelReorientPull, world_to_camera, camera_matrix):
+    def error_color_map(error):
+        green = (0, 255, 0)
+        red = (0, 0, 255)
+        orange = (0 ,150, 255)
+        if error <= 0.05:
+            return green
+        elif error <= 0.1:
+            return orange
+        return red
+    
+    start = project_world_to_image_plane(pull.start, world_to_camera, camera_matrix).astype(int)
+    end = project_world_to_image_plane(pull.end, world_to_camera, camera_matrix).astype(int)
+    image = cv2.circle(image, start.T, 4, (255, 0, 0), thickness=5)
+    image = cv2.circle(image, end.T, 4, (255, 0, 0), thickness=5)
+    image = cv2.line(image, start.T, end.T, color=(255, 0, 0), thickness=2)
+
+    def draw_corners(image, corners, color):
+        corners_image = [project_world_to_image_plane(corner, world_to_camera, camera_matrix) for corner in corners]
+        corners_image = np.array(corners_image, np.int32).reshape((-1, 1 ,2))
+        image = cv2.polylines(image,[corners_image],True,color, thickness=2)
+        return image
+
+    image = draw_corners(image, pull.ordered_corners, (0,255,255))
+    image = draw_corners(image, pull.desired_corners, (0,255,0))
+
+    for corner, desired_corner in zip(pull.ordered_corners, pull.desired_corners):
+        corner_image = project_world_to_image_plane(corner, world_to_camera, camera_matrix).astype(int)
+        desired_corner_image = project_world_to_image_plane(desired_corner, world_to_camera, camera_matrix).astype(int)
+        error = np.linalg.norm(desired_corner - corner)
+        image = cv2.line(image, corner_image.T, desired_corner_image.T, color=error_color_map(error), thickness=1)
+
+    average_error = pull.average_corner_error()
+    text = f"Average corner error: {average_error:.3f} m"
+    font = cv2.FONT_HERSHEY_SIMPLEX
+    image = cv2.putText(image, text, (50, 50), font, 1, error_color_map(average_error), 2) 
+
     return image
