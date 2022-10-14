@@ -1,117 +1,62 @@
-"""Script that shows that output of a keypoint detector from wandb on a ZED camera feed."""
 from camera_toolkit.zed2i import Zed2i
 import cv2
 import pyzed.sl as sl
-from cloth_manipulation.manual_keypoints import ClothTransform
 import numpy as np
-import wandb
-from pathlib import Path
-import torch
-from keypoint_detection.models.detector import KeypointDetector
-from keypoint_detection.models.backbones.convnext_unet import ConvNeXtUnet
-from keypoint_detection.utils.visualization import overlay_image_with_heatmap
-from keypoint_detection.utils.heatmap import get_keypoints_from_heatmap
+from cloth_manipulation.manual_keypoints import ClothTransform
+import time
 import cloth_manipulation.camera_mapping as cm
+from cloth_manipulation.gui import Panel, insert_transformed_into_original, draw_cloth_transform_rectangle
+from cloth_manipulation.observers import KeypointObserver
+from collections import deque
 
-
-def get_wandb_model(checkpoint_reference, backbone=ConvNeXtUnet()):
-    """
-    checkpoint_reference: str e.g. 'airo-box-manipulation/iros2022_0/model-17tyvqfk:v3'
-    """
-    # download checkpoint locally (if not already cached)
-    run = wandb.init(project="inference", entity="airo-box-manipulation")
-    artifact = run.use_artifact(checkpoint_reference, type="model")
-    artifact_dir = artifact.download()
-    model_path = Path(artifact_dir) / "model.ckpt"
-    model = KeypointDetector.load_from_checkpoint(model_path, backbone=backbone)
-    return model
-
-
-def draw_cloth_transform_rectangle(image_full_size) -> np.ndarray:
-    u_top = ClothTransform.crop_start_u
-    u_bottom = u_top + ClothTransform.crop_width
-    v_top = ClothTransform.crop_start_v
-    v_bottom = v_top + ClothTransform.crop_height
-
-    top_left = (u_top, v_top)
-    bottom_right = (u_bottom, v_bottom)
-
-    image = cv2.rectangle(
-        image_full_size, top_left, bottom_right, (255, 0, 0), thickness=2
-    )
-    return image
-
-
-def insert_transformed_into_original(original, transformed):
-    u_top = ClothTransform.crop_start_u
-    u_bottom = u_top + ClothTransform.crop_width
-    v_top = ClothTransform.crop_start_v
-    v_bottom = v_top + ClothTransform.crop_height
-
-    transformed_unresized = cv2.resize(
-        transformed, (ClothTransform.crop_width, ClothTransform.crop_height)
-    )
-    original[
-        v_top:v_bottom,
-        u_top:u_bottom,
-    ] = transformed_unresized
-
+keypoint_observer =  KeypointObserver("airo-box-manipulation/iros2022/model-wy78a0el:v3")
 
 resolution = sl.RESOLUTION.HD720
+control_image_crop_size = 600
 
-zed = Zed2i(resolution=resolution, serial_number=cm.CameraMapping.serial_top)
-image = zed.get_rgb_image("right")
-image = zed.image_shape_torch_to_opencv(image)
+zed = Zed2i(resolution=resolution,serial_number=cm.CameraMapping.serial_top, fps=30)
 
-print("image_shape", image.shape)
-h, w, c = image.shape
+# Configure custom project-wide ClothTransform based on camera, resolution, etc.
+_, h ,w = zed.get_rgb_image().shape
+ClothTransform.crop_start_u = (w - control_image_crop_size) // 2
+ClothTransform.crop_width = control_image_crop_size
+ClothTransform.crop_start_v = (h - control_image_crop_size) // 2
+ClothTransform.crop_height = control_image_crop_size
 
-new_size = 600
-ClothTransform.crop_start_u = (w - new_size) // 2
-ClothTransform.crop_width = new_size
-ClothTransform.crop_start_v = (h - new_size) // 2
-ClothTransform.crop_height = new_size
-
-
-checkpoint_reference = "airo-box-manipulation/iros2022/model-wy78a0el:v3"  # synthetic
-# checkpoint_reference = 'airo-box-manipulation/iros2022/model-1h8f5ldx:v12'
-keypoint_detector = get_wandb_model(checkpoint_reference)
+panel = Panel(np.zeros((h, w, 3), dtype=np.uint8))
 
 print("Press q to quit.")
 
+window_name = "GUI"
+cv2.namedWindow(window_name)
+
+loop_time_queue = deque(maxlen=15)
+fps = -1
+
 while True:
+    start_time = time.time()
     image = zed.get_rgb_image()
-    transformed_image = ClothTransform.transform_image(image)
-    image_batched = torch.Tensor(transformed_image).unsqueeze(0) / 255.0
 
-    with torch.no_grad():
-        heatmap = keypoint_detector(image_batched)
-
-    heatmap_channel_batched = heatmap.squeeze(1)
-    heatmap_channel = heatmap_channel_batched.squeeze(0)
-
-    overlayed = overlay_image_with_heatmap(image_batched, heatmap_channel_batched)
-    overlayed = overlayed.squeeze(0).numpy()
-    overlayed = zed.image_shape_torch_to_opencv(overlayed)
-    overlayed = overlayed.copy()
-
-    keypoints = get_keypoints_from_heatmap(
-        heatmap_channel.cpu(), min_keypoint_pixel_distance=4, max_keypoints=4
-    )
-    for keypoint in keypoints:
-        overlayed = cv2.circle(overlayed, keypoint, 6, (0, 1, 0))
-
-    overlayed *= 255.0
-    overlayed = overlayed.astype(np.uint8)  # copy()
+    keypoints = keypoint_observer.observe(image)
+    visualization_image = keypoint_observer.visualize_last_observation()
 
     image = zed.image_shape_torch_to_opencv(image)
     image = image.copy()
-    insert_transformed_into_original(image, overlayed)
+    insert_transformed_into_original(image, visualization_image)
     image = draw_cloth_transform_rectangle(image)
 
-    cv2.imshow("Image", image)
+
+    panel.fill_image_buffer(image)
+    cv2.putText(panel.image_buffer, f"fps: {fps:.1f}", (w - 200, 50), cv2.FONT_HERSHEY_SIMPLEX, 1, (255,255,255), 2)
+
+    cv2.imshow(window_name, panel.image_buffer)
     key = cv2.waitKey(10)
     if key == ord("q"):
         cv2.destroyAllWindows()
         zed.close()
         break
+
+    end_time = time.time()
+    loop_time = end_time - start_time
+    loop_time_queue.append(loop_time)
+    fps = 1.0 / np.mean(list(loop_time_queue))

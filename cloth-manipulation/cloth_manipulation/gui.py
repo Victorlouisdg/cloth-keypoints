@@ -1,5 +1,7 @@
 import numpy as np
 import cv2
+from cloth_manipulation.manual_keypoints import ClothTransform
+from camera_toolkit.reproject import project_world_to_image_plane
 
 
 class Panel:
@@ -46,3 +48,60 @@ class FourPanels:
         self.top_right = Panel(self.image_buffer[:middle_row, middle_column:])
         self.bottom_left = Panel(self.image_buffer[middle_row:, :middle_column])
         self.bottom_right = Panel(self.image_buffer[middle_row:, middle_column:])
+
+
+def draw_center_circle(image) -> np.ndarray:
+    h, w, _ = image.shape
+    center_u = w // 2
+    center_v = h // 2
+    center = (center_u, center_v)
+    image = cv2.circle(image, center, 1, (255, 0, 255), thickness=2)
+    return image
+
+
+def draw_cloth_transform_rectangle(image_full_size) -> np.ndarray:
+    u_top = ClothTransform.crop_start_u
+    u_bottom = u_top + ClothTransform.crop_width
+    v_top = ClothTransform.crop_start_v
+    v_bottom = v_top + ClothTransform.crop_height
+
+    top_left = (u_top, v_top)
+    bottom_right = (u_bottom, v_bottom)
+
+    image = cv2.rectangle(
+        image_full_size, top_left, bottom_right, (255, 0, 0), thickness=2
+    )
+    return image
+
+
+def insert_transformed_into_original(original, transformed):
+    u_top = ClothTransform.crop_start_u
+    u_bottom = u_top + ClothTransform.crop_width
+    v_top = ClothTransform.crop_start_v
+    v_bottom = v_top + ClothTransform.crop_height
+
+    transformed_unresized = cv2.resize(
+        transformed, (ClothTransform.crop_width, ClothTransform.crop_height)
+    )
+    original[
+        v_top:v_bottom,
+        u_top:u_bottom,
+    ] = transformed_unresized
+
+
+def draw_world_axes(image, world_to_camera, camera_matrix):
+    origin = project_world_to_image_plane(np.zeros(3), world_to_camera, camera_matrix).astype(int)
+    image = cv2.circle(image, origin.T, 10, (0, 255, 255), thickness=2)
+
+    x_pos = project_world_to_image_plane([1.0, 0.0, 0.0], world_to_camera, camera_matrix).astype(int)
+    x_neg = project_world_to_image_plane([-1.0, 0.0, 0.0], world_to_camera, camera_matrix).astype(int)
+    y_pos = project_world_to_image_plane([0.0, 1.0, 0.0], world_to_camera, camera_matrix).astype(int)
+    y_neg = project_world_to_image_plane([0.0, -1.0, 0.0], world_to_camera, camera_matrix).astype(int)
+    image = cv2.line(image, x_pos.T, origin.T, color=(0, 0, 255), thickness=2)
+    image = cv2.line(image, x_neg.T, origin.T, color=(100, 100, 255), thickness=2)
+    image = cv2.line(image, y_pos.T, origin.T, color=(0, 255, 0), thickness=2)
+    image = cv2.line(image, y_neg.T, origin.T, color=(150, 255, 150), thickness=2)
+
+    z_pos = project_world_to_image_plane([0.0, 0.0, 1.0], world_to_camera, camera_matrix).astype(int)
+    image = cv2.line(image, z_pos.T, origin.T, color=(255, 0, 0), thickness=2)
+    return image

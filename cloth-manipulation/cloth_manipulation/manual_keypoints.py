@@ -10,14 +10,6 @@ import torchvision
 from camera_toolkit.zed2i import Zed2i
 import cloth_manipulation.camera_mapping as cm
 
-# load camera to marker transform
-with open(Path(__file__).parent / "marker.pickle", "rb") as f:
-    aruco_in_camera_position, aruco_in_camera_orientation = pickle.load(f)
-# get camera extrinsics transform
-aruco_in_camera_transform = np.eye(4)
-aruco_in_camera_transform[:3, :3] = aruco_in_camera_orientation
-aruco_in_camera_transform[:3, 3] = aruco_in_camera_position
-
 
 class KeypointImageTransform(abc.ABC):
     def transform_image(self, img_batch: np.ndarray):
@@ -138,6 +130,7 @@ def get_manual_keypoints(img: np.ndarray, num_keypoints: int = 4):
 
 if __name__ == "__main__":
     from camera_toolkit.reproject import reproject_to_world_z_plane
+    from cloth_manipulation.calibration import load_saved_calibration
 
     # open ZED (and assert it is available)
     Zed2i.list_camera_serial_numbers()
@@ -145,6 +138,8 @@ if __name__ == "__main__":
     # capture image
     torch_img = zed.get_rgb_image()
     img = zed.image_shape_torch_to_opencv(torch_img)
+
+    aruco_in_camera_transform = load_saved_calibration()
 
     ## original image
     keypoints_in_camera = np.array(get_manual_keypoints(img, 4))
