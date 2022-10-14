@@ -6,14 +6,14 @@ import numpy as np
 from cloth_manipulation.manual_keypoints import ClothTransform
 import time
 import cloth_manipulation.camera_mapping as cm
-from cloth_manipulation.gui import Panel, insert_transformed_into_original, draw_cloth_transform_rectangle, visualize_towel_reorient_pull
+from cloth_manipulation.gui import Panel, draw_cloth_transform_rectangle, visualize_towel_reorient_pull
 from cloth_manipulation.observers import KeypointObserver
 from collections import deque
 from cloth_manipulation.fake_robots import FakeDualArm, FakeRobot
 from cloth_manipulation.motion_primitives.pull import TowelReorientPull
 from camera_toolkit.reproject import reproject_to_world_z_plane
 
-keypoint_observer =  KeypointObserver("airo-box-manipulation/iros2022/model-wy78a0el:v3")
+keypoint_observer =  KeypointObserver()
 
 resolution = sl.RESOLUTION.HD720
 control_image_crop_size = 600

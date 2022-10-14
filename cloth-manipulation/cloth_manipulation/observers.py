@@ -9,14 +9,14 @@ from camera_toolkit.zed2i import Zed2i
 
 
 class KeypointObserver():
-    def __init__(self, wandb_checkout_reference):
-        self.keypoint_detector = get_wandb_model(wandb_checkout_reference)
+    def __init__(self):
+        self.keypoint_detector = get_wandb_model().cuda()
 
     def observe(self, image):
         transformed_image = ClothTransform.transform_image(image)
         image_batched = torch.Tensor(transformed_image).unsqueeze(0) / 255.0
         with torch.no_grad():
-            heatmap = self.keypoint_detector(image_batched)
+            heatmap = self.keypoint_detector(image_batched.cuda()).cpu()
 
         heatmap_channel_batched = heatmap.squeeze(1)
         heatmap_channel = heatmap_channel_batched.squeeze(0)

@@ -11,7 +11,7 @@ from cloth_manipulation.gui import FourPanels
 from cloth_manipulation.observers import KeypointObserver
 from collections import deque
 
-keypoint_observer =  KeypointObserver("airo-box-manipulation/iros2022/model-wy78a0el:v3")
+keypoint_observer =  KeypointObserver()
 
 resolution = sl.RESOLUTION.HD720
 control_image_crop_size = 600

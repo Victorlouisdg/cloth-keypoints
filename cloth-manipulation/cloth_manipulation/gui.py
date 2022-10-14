@@ -121,9 +121,17 @@ def visualize_towel_reorient_pull(image, pull: TowelReorientPull, world_to_camer
     
     start = project_world_to_image_plane(pull.start, world_to_camera, camera_matrix).astype(int)
     end = project_world_to_image_plane(pull.end, world_to_camera, camera_matrix).astype(int)
-    image = cv2.circle(image, start.T, 4, (255, 0, 0), thickness=5)
-    image = cv2.circle(image, end.T, 4, (255, 0, 0), thickness=5)
-    image = cv2.line(image, start.T, end.T, color=(255, 0, 0), thickness=2)
+    image = cv2.line(image, start.T, end.T, color=(255, 255, 0), thickness=2)
+
+    def draw_pose(image, pose):
+        pose_camera = world_to_camera @ pose
+        rvec = pose_camera[:3, :3]
+        tvec = pose_camera[:3, -1]
+        image = cv2.drawFrameAxes(image, camera_matrix, np.zeros(4), rvec, tvec, 0.05)
+        return image
+
+    draw_pose(image, pull.start_pose)
+    draw_pose(image, pull.end_pose)
 
     def draw_corners(image, corners, color):
         corners_image = [project_world_to_image_plane(corner, world_to_camera, camera_matrix) for corner in corners]

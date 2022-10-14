@@ -1,12 +1,13 @@
 import wandb
 from pathlib import Path
 from keypoint_detection.models.detector import KeypointDetector
-from keypoint_detection.models.backbones.convnext_unet import ConvNeXtUnet
-from keypoint_detection.utils.visualization import overlay_image_with_heatmap
-from keypoint_detection.utils.heatmap import get_keypoints_from_heatmap
+from keypoint_detection.models.backbones.maxvit_unet import MaxVitUnet
 
+default_reference = "airo-box-manipulation/iros2022/model-14zb70au:v1"
+default_backbone_class  = MaxVitUnet
 
-def get_wandb_model(checkpoint_reference, backbone=ConvNeXtUnet()):
+# TODO figure out whether we can remove the requirement to pass backbone
+def get_wandb_model(checkpoint_reference=default_reference, backbone=default_backbone_class()):
     """
     checkpoint_reference: str e.g. 'airo-box-manipulation/iros2022_0/model-17tyvqfk:v3'
     """
