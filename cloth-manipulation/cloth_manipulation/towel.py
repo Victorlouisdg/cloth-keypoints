@@ -3,11 +3,11 @@ import torch
 from camera_toolkit.reproject import reproject_to_world_z_plane
 from camera_toolkit.zed2i import Zed2i
 from cloth_manipulation.manual_keypoints import ClothTransform, aruco_in_camera_transform, get_manual_keypoints
-from cloth_manipulation.motion_primitives.fold import execute_dual_fold_lines
+from cloth_manipulation.motion_primitives.fold_execution import execute_dual_fold_trajectories
 from cloth_manipulation.motion_primitives.fold_trajectory_parameterization import CircularFoldTrajectory
 from cloth_manipulation.motion_primitives.pull import TowelReorientPull, execute_pull_primitive
-from cloth_manipulation.ur_robotiq_dual_arm_interface import DualArmUR
-from cloth_manipulation.utils import get_ordered_keypoints
+from cloth_manipulation.hardware.ur_robotiq_dual_arm_interface import DualArmUR
+from cloth_manipulation.geometry import get_ordered_keypoints
 
 def get_towel_keypoints(zed: Zed2i, keypoint_detector: torch.nn.Module = None):
     img = zed.get_rgb_image()
@@ -74,4 +74,4 @@ def fold_towel_once(zed: Zed2i, dual_arm: DualArmUR, keypoint_detector: torch.nn
     fold_trajectory_victor = CircularFoldTrajectory(start_victor, end_victor)
     fold_trajectory_louise = CircularFoldTrajectory(start_louise, end_louise)
 
-    execute_dual_fold_lines(fold_trajectory_victor, fold_trajectory_louise, dual_arm)
+    execute_dual_fold_trajectories(fold_trajectory_victor, fold_trajectory_louise, dual_arm)

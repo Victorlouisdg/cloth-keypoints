@@ -1,5 +1,5 @@
 from camera_toolkit.zed2i import Zed2i
-from cloth_manipulation.setup_hw import setup_hw
+from cloth_manipulation.hardware.setup_hw import setup_hw
 from cloth_manipulation.towel import fold_towel_once
 
 if __name__ == "__main__":

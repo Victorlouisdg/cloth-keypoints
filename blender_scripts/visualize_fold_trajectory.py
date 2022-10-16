@@ -1,7 +1,7 @@
 from typing import List
 import airo_blender_toolkit as abt
 from cloth_manipulation.motion_primitives.fold_trajectory_parameterization import CircularFoldTrajectory
-from cloth_manipulation.utils import get_ordered_keypoints
+from cloth_manipulation.geometry import get_ordered_keypoints
 import numpy as np
 from mathutils import Vector
 import argparse

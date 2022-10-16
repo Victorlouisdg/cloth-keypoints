@@ -1,3 +1,4 @@
+from typing import List
 import numpy as np
 
 
@@ -40,7 +41,8 @@ class FoldTrajectory:
         pose[1, 3] += 0.01
         return pose
 
-    def get_fold_path(self, n_waypoints: int = 50):
+    def get_fold_path(self, n_waypoints: int = 50) -> List[np.ndarray]:
+        """Samples n_waypoints from the fold path and return them as a list of 4x4 poses."""
         waypoints = [self._fold_pose(completion) for completion in np.linspace(0, 1, n_waypoints)]
         return np.array(waypoints)
 
@@ -49,7 +51,7 @@ class CircularFoldTrajectory(FoldTrajectory):
     def __init__(self, start, end) -> None:
         super().__init__(start, end)
 
-    def _fold_pose(self, t):
+    def _fold_pose(self, t) -> np.ndarray:
         """Parameterization of the fold trajectory
         t = 0 is the grasp pose, t = 1 is the final (release) pose
         """
