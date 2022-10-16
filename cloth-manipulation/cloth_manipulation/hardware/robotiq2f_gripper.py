@@ -1,5 +1,6 @@
-from robotiq2f import Robotiq2F85TCP
 from cloth_manipulation.hardware.base_classes import Gripper
+from robotiq2f import Robotiq2F85TCP
+
 
 # This class is only a thin wrapper arround our own Robotiq2F85TCP.
 # Long term, that class would ideally inherit from Gripper so this class becomes unnecessary.

@@ -1,31 +1,32 @@
+import time
+from collections import deque
+
+import cv2
+import numpy as np
+import pyzed.sl as sl
+from camera_toolkit.reproject import reproject_to_world_z_plane
 from camera_toolkit.zed2i import Zed2i
 from cloth_manipulation.calibration import load_saved_calibration
-import cv2
-import pyzed.sl as sl
-import numpy as np
-from cloth_manipulation.manual_keypoints import ClothTransform
-import time
-import cloth_manipulation.camera_mapping as cm
+from cloth_manipulation.camera_mapping import CameraMapping
 from cloth_manipulation.gui import Panel, draw_cloth_transform_rectangle, visualize_towel_reorient_pull
-from cloth_manipulation.observers import KeypointObserver
-from collections import deque
-from cloth_manipulation.hardware.fake_hardware import FakeDualArm, FakeRobot
+from cloth_manipulation.hardware.setup_hardware import setup_fake_victor_louise
+from cloth_manipulation.input_transform import InputTransform
 from cloth_manipulation.motion_primitives.pull import TowelReorientPull
-from camera_toolkit.reproject import reproject_to_world_z_plane
+from cloth_manipulation.observers import KeypointObserver
 
-keypoint_observer =  KeypointObserver()
+keypoint_observer = KeypointObserver()
 
 resolution = sl.RESOLUTION.HD720
 control_image_crop_size = 600
 
-zed = Zed2i(resolution=resolution,serial_number=cm.CameraMapping.serial_top, fps=30)
+zed = Zed2i(resolution=resolution, serial_number=CameraMapping.serial_top, fps=30)
 
-# Configure custom project-wide ClothTransform based on camera, resolution, etc.
-_, h ,w = zed.get_rgb_image().shape
-ClothTransform.crop_start_u = (w - control_image_crop_size) // 2
-ClothTransform.crop_width = control_image_crop_size
-ClothTransform.crop_start_v = (h - control_image_crop_size) // 2
-ClothTransform.crop_height = control_image_crop_size
+# Configure custom project-wide InputTransform based on camera, resolution, etc.
+_, h, w = zed.get_rgb_image().shape
+InputTransform.crop_start_u = (w - control_image_crop_size) // 2
+InputTransform.crop_width = control_image_crop_size
+InputTransform.crop_start_v = (h - control_image_crop_size) // 2
+InputTransform.crop_height = control_image_crop_size
 
 panel = Panel(np.zeros((h, w, 3), dtype=np.uint8))
 
@@ -40,9 +41,7 @@ fps = -1
 world_to_camera = load_saved_calibration()
 camera_matrix = zed.get_camera_matrix()
 
-victor = FakeRobot(robot_in_world_position=[-0.4,0,0])
-louise = FakeRobot(robot_in_world_position=[0.4,0,0])
-dual_arm = FakeDualArm(victor, louise)
+victor_louise = setup_fake_victor_louise()
 
 while True:
     start_time = time.time()
@@ -57,13 +56,13 @@ while True:
     image = draw_cloth_transform_rectangle(image)
 
     if len(keypoints) == 4:
-        keypoints_in_camera = ClothTransform.reverse_transform_keypoints(np.array(keypoints))
+        keypoints_in_camera = InputTransform.reverse_transform_keypoints(np.array(keypoints))
         keypoints_in_world = reproject_to_world_z_plane(keypoints_in_camera, camera_matrix, world_to_camera)
-        pull = TowelReorientPull(keypoints_in_world, dual_arm)
+        pull = TowelReorientPull(keypoints_in_world, victor_louise)
         image = visualize_towel_reorient_pull(image, pull, world_to_camera, camera_matrix)
 
     panel.fill_image_buffer(image)
-    cv2.putText(panel.image_buffer, f"fps: {fps:.1f}", (w - 200, 50), cv2.FONT_HERSHEY_SIMPLEX, 1, (255,255,255), 2)
+    cv2.putText(panel.image_buffer, f"fps: {fps:.1f}", (w - 200, 50), cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 255, 255), 2)
 
     cv2.imshow(window_name, panel.image_buffer)
     key = cv2.waitKey(10)

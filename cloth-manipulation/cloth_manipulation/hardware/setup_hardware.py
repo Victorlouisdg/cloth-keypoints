@@ -3,11 +3,10 @@ Functions that return prebuilt dual arm setups for specific scenarios.
 """
 
 import numpy as np
-from scipy.spatial.transform import Rotation as R
-from cloth_manipulation.hardware.fake_hardware import FakeGripper, FakeArm
 from cloth_manipulation.hardware.base_classes import DualArm
-from cloth_manipulation.hardware.universal_robots import UR
+from cloth_manipulation.hardware.fake_hardware import FakeArm, FakeGripper
 from cloth_manipulation.hardware.robotiq2f_gripper import Robotiq2F85
+from cloth_manipulation.hardware.universal_robots import UR
 
 
 def setup_victor_louise() -> DualArm:

@@ -1,6 +1,7 @@
-from cloth_manipulation.hardware.base_classes import RobotArm, Gripper
-from typing import List, Optional, Tuple
+from typing import List, Optional
+
 import numpy as np
+from cloth_manipulation.hardware.base_classes import Gripper, RobotArm
 from rtde_control import RTDEControlInterface
 from rtde_receive import RTDEReceiveInterface
 from scipy.spatial.transform import Rotation as R

@@ -1,11 +1,11 @@
-from typing import List
-import airo_blender_toolkit as abt
-from cloth_manipulation.motion_primitives.fold_trajectory_parameterization import CircularFoldTrajectory
-from cloth_manipulation.geometry import get_ordered_keypoints
-import numpy as np
-from mathutils import Vector
 import argparse
 import sys
+
+import airo_blender_toolkit as abt
+import numpy as np
+from cloth_manipulation.geometry import get_ordered_keypoints
+from cloth_manipulation.motion_primitives.fold_trajectory_parameterization import CircularFoldTrajectory
+from mathutils import Vector
 
 
 def default_towel() -> abt.Towel:
@@ -50,7 +50,6 @@ def visualize_fold_trajectory(fold_trajectory):
     for transform in fold_trajectory.get_fold_path(10):
         empty = abt.visualize_transform(transform, scale=0.02)
         visualization_objects.append(empty)
-
 
     pregrasp = fold_trajectory.get_pregrasp_pose()
     empty = abt.visualize_transform(pregrasp, scale=0.05)

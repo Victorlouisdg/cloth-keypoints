@@ -1,10 +1,10 @@
-from typing import List
-import airo_blender_toolkit as abt
-import numpy as np
-from mathutils import Vector
-from cloth_manipulation.motion_primitives.pull import TowelReorientPull
 import argparse
 import sys
+
+import airo_blender_toolkit as abt
+import numpy as np
+from cloth_manipulation.motion_primitives.pull import TowelReorientPull
+from mathutils import Vector
 
 
 def default_towel() -> abt.Towel:
@@ -102,7 +102,7 @@ if __name__ == "__main__":
             offset = Vector((x, y, 0))
 
             sphere = abt.Sphere(location=offset, radius=0.005)
-            sphere.add_colored_material((0,0,1,1))
+            sphere.add_colored_material((0, 0, 1, 1))
 
             visualize_robots_base_plates(offset)
             towel = random_towel(i)

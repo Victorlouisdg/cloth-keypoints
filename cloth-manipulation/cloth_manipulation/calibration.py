@@ -1,14 +1,15 @@
-from camera_toolkit.zed2i import Zed2i
-import cv2
-import pyzed.sl as sl
-import numpy as np
-import time
-import cloth_manipulation.camera_mapping as cm
-from cloth_manipulation.gui import Panel, draw_center_circle, draw_world_axes
-from camera_toolkit.aruco import get_aruco_marker_poses
 import pickle
-from pathlib import Path
+import time
 from functools import cache
+from pathlib import Path
+
+import cv2
+import numpy as np
+import pyzed.sl as sl
+from camera_toolkit.aruco import get_aruco_marker_poses
+from camera_toolkit.zed2i import Zed2i
+from cloth_manipulation.camera_mapping import CameraMapping
+from cloth_manipulation.gui import Panel, draw_center_circle, draw_world_axes
 
 
 @cache
@@ -26,11 +27,12 @@ def save_calibration(rotation_matrix, translation):
     with open(Path(__file__).parent / "marker.pickle", "wb") as f:
         pickle.dump([translation, rotation_matrix], f)
 
+
 if __name__ == "__main__":
     resolution = sl.RESOLUTION.HD720
-    zed = Zed2i(resolution=resolution, serial_number=cm.CameraMapping.serial_top, fps=30)
+    zed = Zed2i(resolution=resolution, serial_number=CameraMapping.serial_top, fps=30)
 
-    # Configure custom project-wide ClothTransform based on camera, resolution, etc.
+    # Configure custom project-wide InputTransform based on camera, resolution, etc.
     _, h, w = zed.get_rgb_image().shape
     panel = Panel(np.zeros((h, w, 3), dtype=np.uint8))
 
@@ -45,7 +47,9 @@ if __name__ == "__main__":
         image = zed.image_shape_torch_to_opencv(image)
         image = image.copy()
         cam_matrix = zed.get_camera_matrix()
-        image, translations, rotations, _ = get_aruco_marker_poses(image, cam_matrix, 0.106, cv2.aruco.DICT_6X6_250, True)
+        image, translations, rotations, _ = get_aruco_marker_poses(
+            image, cam_matrix, 0.106, cv2.aruco.DICT_6X6_250, True
+        )
         image = draw_center_circle(image)
 
         if rotations is not None:

@@ -1,6 +1,7 @@
-from cloth_manipulation.hardware.base_classes import Gripper, RobotArm
 from typing import List, Optional
+
 import numpy as np
+from cloth_manipulation.hardware.base_classes import Gripper, RobotArm
 
 
 class FakeGripper(Gripper):

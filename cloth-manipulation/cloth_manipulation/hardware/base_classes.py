@@ -12,9 +12,10 @@
     All poses provided to these classes should be homogeneous (4, 4) numpy arrays.
 """
 from abc import ABC, abstractmethod
-from typing import List, Optional, Tuple
-import numpy as np
 from threading import Thread
+from typing import List, Optional, Tuple
+
+import numpy as np
 
 
 class Gripper(ABC):
@@ -31,7 +32,6 @@ class Gripper(ABC):
     @abstractmethod
     def move_to_position(self, position=0.5):
         """position should a float between 0 and 1, where 0 is completely open and 1 is closed."""
-        pass
 
 
 class RobotArm(ABC):
@@ -57,28 +57,23 @@ class RobotArm(ABC):
     @abstractmethod
     def pose(self):
         """Read-only attribute that contains the current tcp world pose."""
-        pass
 
     @abstractmethod
     def is_pose_unsafe(self, pose_in_world) -> bool:
         """Check whether it is unsafe to go the given pose. Intended for use externally e.g. by a control of grasping
         strategy or internally as a safety check before executing a motion."""
-        pass
 
     @abstractmethod
     def move_tcp(self, pose_in_world: np.ndarray):
         """Move the TCP to a pose with no guarantees on the path taken."""
-        pass
 
     @abstractmethod
     def move_tcp_linear(self, pose_in_world: np.ndarray, speed: float, acceleration: float):
         """Move the robot TCP linearly from its current pose to the specified pose."""
-        pass
 
     @abstractmethod
     def move_tcp_linear_path(self, poses_in_world: List[np.ndarray], speed: float, acceleration: float):
         """Move the robot TCP linearly between the waypoints of path."""
-        pass
 
 
 class DualArm:

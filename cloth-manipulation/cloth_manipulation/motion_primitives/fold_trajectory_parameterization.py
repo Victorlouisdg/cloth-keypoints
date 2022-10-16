@@ -1,4 +1,5 @@
 from typing import List
+
 import numpy as np
 
 
@@ -58,10 +59,8 @@ class CircularFoldTrajectory(FoldTrajectory):
         assert t <= 1 and t >= 0
         position_angle = np.pi - t * np.pi
         # the radius was manually tuned on a cloth to find a balance between grasp width along the cloth and grasp robustness given the gripper fingers.
-        radius = (self.len / 2.0-0.015)
-        position = np.array(
-            [  radius* np.cos(position_angle), 0, radius * np.sin(position_angle)]
-        )
+        radius = self.len / 2.0 - 0.015
+        position = np.array([radius * np.cos(position_angle), 0, radius * np.sin(position_angle)])
 
         grasp_angle = np.pi / 10
         # bring finger tip down to zero.

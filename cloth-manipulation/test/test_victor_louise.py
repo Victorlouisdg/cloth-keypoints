@@ -5,6 +5,7 @@ victor_louise = setup_victor_louise()
 victor = victor_louise.left
 louise = victor_louise.right
 
+
 def check_gripper_and_motion(robot):
     # Check robot gripper
     robot.gripper.close()
@@ -22,4 +23,3 @@ check_gripper_and_motion(louise)
 
 # Check synchronous movement
 victor_louise.dual_move_tcp_linear(victor.home_pose, louise.home_pose)
-

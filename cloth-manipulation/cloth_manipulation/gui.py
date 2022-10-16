@@ -1,8 +1,8 @@
-from cloth_manipulation.motion_primitives.pull import TowelReorientPull
-import numpy as np
 import cv2
-from cloth_manipulation.manual_keypoints import ClothTransform
+import numpy as np
 from camera_toolkit.reproject import project_world_to_image_plane
+from cloth_manipulation.input_transform import InputTransform
+from cloth_manipulation.motion_primitives.pull import TowelReorientPull
 
 
 class Panel:
@@ -61,29 +61,25 @@ def draw_center_circle(image) -> np.ndarray:
 
 
 def draw_cloth_transform_rectangle(image_full_size) -> np.ndarray:
-    u_top = ClothTransform.crop_start_u
-    u_bottom = u_top + ClothTransform.crop_width
-    v_top = ClothTransform.crop_start_v
-    v_bottom = v_top + ClothTransform.crop_height
+    u_top = InputTransform.crop_start_u
+    u_bottom = u_top + InputTransform.crop_width
+    v_top = InputTransform.crop_start_v
+    v_bottom = v_top + InputTransform.crop_height
 
     top_left = (u_top, v_top)
     bottom_right = (u_bottom, v_bottom)
 
-    image = cv2.rectangle(
-        image_full_size, top_left, bottom_right, (255, 0, 0), thickness=2
-    )
+    image = cv2.rectangle(image_full_size, top_left, bottom_right, (255, 0, 0), thickness=2)
     return image
 
 
 def insert_transformed_into_original(original, transformed):
-    u_top = ClothTransform.crop_start_u
-    u_bottom = u_top + ClothTransform.crop_width
-    v_top = ClothTransform.crop_start_v
-    v_bottom = v_top + ClothTransform.crop_height
+    u_top = InputTransform.crop_start_u
+    u_bottom = u_top + InputTransform.crop_width
+    v_top = InputTransform.crop_start_v
+    v_bottom = v_top + InputTransform.crop_height
 
-    transformed_unresized = cv2.resize(
-        transformed, (ClothTransform.crop_width, ClothTransform.crop_height)
-    )
+    transformed_unresized = cv2.resize(transformed, (InputTransform.crop_width, InputTransform.crop_height))
     original[
         v_top:v_bottom,
         u_top:u_bottom,
@@ -112,13 +108,13 @@ def visualize_towel_reorient_pull(image, pull: TowelReorientPull, world_to_camer
     def error_color_map(error):
         green = (0, 255, 0)
         red = (0, 0, 255)
-        orange = (0 ,150, 255)
+        orange = (0, 150, 255)
         if error <= 0.05:
             return green
         elif error <= 0.1:
             return orange
         return red
-    
+
     start = project_world_to_image_plane(pull.start, world_to_camera, camera_matrix).astype(int)
     end = project_world_to_image_plane(pull.end, world_to_camera, camera_matrix).astype(int)
     image = cv2.line(image, start.T, end.T, color=(255, 255, 0), thickness=2)
@@ -135,12 +131,12 @@ def visualize_towel_reorient_pull(image, pull: TowelReorientPull, world_to_camer
 
     def draw_corners(image, corners, color):
         corners_image = [project_world_to_image_plane(corner, world_to_camera, camera_matrix) for corner in corners]
-        corners_image = np.array(corners_image, np.int32).reshape((-1, 1 ,2))
-        image = cv2.polylines(image,[corners_image],True,color, thickness=2)
+        corners_image = np.array(corners_image, np.int32).reshape((-1, 1, 2))
+        image = cv2.polylines(image, [corners_image], True, color, thickness=2)
         return image
 
-    image = draw_corners(image, pull.ordered_corners, (0,255,255))
-    image = draw_corners(image, pull.desired_corners, (0,255,0))
+    image = draw_corners(image, pull.ordered_corners, (0, 255, 255))
+    image = draw_corners(image, pull.desired_corners, (0, 255, 0))
 
     for corner, desired_corner in zip(pull.ordered_corners, pull.desired_corners):
         corner_image = project_world_to_image_plane(corner, world_to_camera, camera_matrix).astype(int)
@@ -151,6 +147,6 @@ def visualize_towel_reorient_pull(image, pull: TowelReorientPull, world_to_camer
     average_error = pull.average_corner_error()
     text = f"Average corner error: {average_error:.3f} m"
     font = cv2.FONT_HERSHEY_SIMPLEX
-    image = cv2.putText(image, text, (50, 50), font, 1, error_color_map(average_error), 2) 
+    image = cv2.putText(image, text, (50, 50), font, 1, error_color_map(average_error), 2)
 
     return image

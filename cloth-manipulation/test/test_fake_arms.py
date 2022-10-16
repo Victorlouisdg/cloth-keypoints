@@ -1,10 +1,13 @@
+import numpy as np
 from cloth_manipulation.controllers import ReorientTowelController
 from cloth_manipulation.geometry import move_closer
 from cloth_manipulation.hardware.setup_hardware import setup_fake_victor_louise
-from cloth_manipulation.motion_primitives.fold_execution import execute_dual_fold_trajectories, execute_single_fold_trajectory
+from cloth_manipulation.motion_primitives.fold_execution import (
+    execute_dual_fold_trajectories,
+    execute_single_fold_trajectory,
+)
 from cloth_manipulation.motion_primitives.fold_trajectory_parameterization import CircularFoldTrajectory
 from cloth_manipulation.motion_primitives.pull import TowelReorientPull, execute_pull_primitive
-import numpy as np
 
 np.set_printoptions(suppress=True)
 np.set_printoptions(precision=2)
@@ -72,5 +75,3 @@ corners = corners_shifted
 while not controller.finished:
     controller.act(corners)
     corners = corners_centered  # Imitate execution of pull
-
-

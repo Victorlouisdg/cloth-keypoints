@@ -1,6 +1,6 @@
-from cloth_manipulation.hardware.base_classes import DualArm, RobotArm
 import numpy as np
 from cloth_manipulation.geometry import angle_2D, get_ordered_keypoints, get_short_and_long_edges, rotate_point
+from cloth_manipulation.hardware.base_classes import DualArm, RobotArm
 from scipy.spatial.transform import Rotation
 
 

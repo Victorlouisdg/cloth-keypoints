@@ -1,27 +1,28 @@
-from camera_toolkit.zed2i import Zed2i
-import cv2
-import pyzed.sl as sl
-import numpy as np
-from cloth_manipulation.manual_keypoints import ClothTransform
 import time
-import cloth_manipulation.camera_mapping as cm
-from cloth_manipulation.gui import Panel, insert_transformed_into_original, draw_cloth_transform_rectangle
-from cloth_manipulation.observers import KeypointObserver
 from collections import deque
 
-keypoint_observer =  KeypointObserver()
+import cv2
+import numpy as np
+import pyzed.sl as sl
+from camera_toolkit.zed2i import Zed2i
+from cloth_manipulation.camera_mapping import CameraMapping
+from cloth_manipulation.gui import Panel, draw_cloth_transform_rectangle, insert_transformed_into_original
+from cloth_manipulation.input_transform import InputTransform
+from cloth_manipulation.observers import KeypointObserver
+
+keypoint_observer = KeypointObserver()
 
 resolution = sl.RESOLUTION.HD720
 control_image_crop_size = 600
 
-zed = Zed2i(resolution=resolution,serial_number=cm.CameraMapping.serial_top, fps=30)
+zed = Zed2i(resolution=resolution, serial_number=CameraMapping.serial_top, fps=30)
 
-# Configure custom project-wide ClothTransform based on camera, resolution, etc.
-_, h ,w = zed.get_rgb_image().shape
-ClothTransform.crop_start_u = (w - control_image_crop_size) // 2
-ClothTransform.crop_width = control_image_crop_size
-ClothTransform.crop_start_v = (h - control_image_crop_size) // 2
-ClothTransform.crop_height = control_image_crop_size
+# Configure custom project-wide InputTransform based on camera, resolution, etc.
+_, h, w = zed.get_rgb_image().shape
+InputTransform.crop_start_u = (w - control_image_crop_size) // 2
+InputTransform.crop_width = control_image_crop_size
+InputTransform.crop_start_v = (h - control_image_crop_size) // 2
+InputTransform.crop_height = control_image_crop_size
 
 panel = Panel(np.zeros((h, w, 3), dtype=np.uint8))
 
@@ -45,9 +46,8 @@ while True:
     insert_transformed_into_original(image, visualization_image)
     image = draw_cloth_transform_rectangle(image)
 
-
     panel.fill_image_buffer(image)
-    cv2.putText(panel.image_buffer, f"fps: {fps:.1f}", (w - 200, 50), cv2.FONT_HERSHEY_SIMPLEX, 1, (255,255,255), 2)
+    cv2.putText(panel.image_buffer, f"fps: {fps:.1f}", (w - 200, 50), cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 255, 255), 2)
 
     cv2.imshow(window_name, panel.image_buffer)
     key = cv2.waitKey(10)
