@@ -54,6 +54,13 @@ def move_closer(point0: np.ndarray, point1: np.ndarray, distance: float):
     """Moves two points closer to each other by a distance. Each point will have moved half of this distance."""
     direction = point1 - point0
     direction /= np.linalg.norm(direction)
-    point0 -= (distance / 2) * direction
-    point1 += (distance / 2) * direction
+    point0 += (distance / 2) * direction
+    point1 -= (distance / 2) * direction
     return point0, point1
+
+
+def top_down_orientation(gripper_open_direction) -> np.ndarray:
+    X = gripper_open_direction / np.linalg.norm(gripper_open_direction)  # np.array([-1, 0, 0])
+    Z = np.array([0, 0, -1])
+    Y = np.cross(Z, X)
+    return np.column_stack([X, Y, Z])

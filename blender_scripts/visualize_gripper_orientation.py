@@ -1,14 +1,8 @@
 import airo_blender_toolkit as abt
 import numpy as np
+from cloth_manipulation.geometry import top_down_orientation
 from mathutils import Vector
 from scipy.spatial.transform import Rotation
-
-
-def top_down_orientation(gripper_open_direction):
-    X = gripper_open_direction / np.linalg.norm(gripper_open_direction)  # np.array([-1, 0, 0])
-    Z = np.array([0, 0, -1])
-    Y = np.cross(Z, X)
-    return np.column_stack([X, Y, Z])
 
 
 def tilted_pull_orientation(pull_location, robot_location, tilt_angle=45):

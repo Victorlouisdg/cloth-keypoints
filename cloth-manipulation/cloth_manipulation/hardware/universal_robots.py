@@ -69,7 +69,7 @@ class UR(RobotArm):
             pose_in_robot = self.world_to_robot @ pose
             pose = homogeneous_pose_to_position_and_rotvec(pose_in_robot)
             # TODO CHECK ORDER OF THESE ADDED ELEMENTS! Below is as docs implies.
-            pose_extended = np.array(pose + [acceleration, speed, self.BLEND])
+            pose_extended = np.concatenate([pose, [acceleration, speed, self.BLEND_RADIUS]])
             poses.append(pose_extended)
         self.rtde_control.moveL(poses)
 
@@ -81,7 +81,7 @@ class UR(RobotArm):
         """Check whether a given pose is very likely unsafe.
         If this method returns true, the planned robot motion not be executed."""
         pose_in_robot = self.world_to_robot @ pose_in_world
-        reachable = self.rtde_control.isPoseWithinSafetyLimits(pose_in_robot)
+        reachable = self.rtde_control.isPoseWithinSafetyLimits(homogeneous_pose_to_position_and_rotvec(pose_in_robot))
         if not reachable:
             return True
 

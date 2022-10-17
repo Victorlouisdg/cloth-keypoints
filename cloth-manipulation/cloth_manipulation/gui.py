@@ -1,3 +1,5 @@
+from typing import List
+
 import cv2
 import numpy as np
 from camera_toolkit.reproject import project_world_to_image_plane
@@ -104,6 +106,21 @@ def draw_world_axes(image, world_to_camera, camera_matrix):
     return image
 
 
+def draw_keypoints(image, keypoints: List[np.ndarray], world_to_camera, camera_matrix):
+    for keypoint in keypoints:
+        keypoint = project_world_to_image_plane(keypoint, world_to_camera, camera_matrix).astype(int)
+        image = cv2.circle(image, keypoint, 1, color=(0, 0, 255), thickness=2)
+    return image
+
+
+def draw_pose(image, pose, world_to_camera, camera_matrix):
+    pose_camera = world_to_camera @ pose
+    rvec = pose_camera[:3, :3]
+    tvec = pose_camera[:3, -1]
+    image = cv2.drawFrameAxes(image, camera_matrix, np.zeros(4), rvec, tvec, 0.05)
+    return image
+
+
 def visualize_towel_reorient_pull(image, pull: TowelReorientPull, world_to_camera, camera_matrix):
     def error_color_map(error):
         green = (0, 255, 0)
@@ -119,15 +136,8 @@ def visualize_towel_reorient_pull(image, pull: TowelReorientPull, world_to_camer
     end = project_world_to_image_plane(pull.end, world_to_camera, camera_matrix).astype(int)
     image = cv2.line(image, start.T, end.T, color=(255, 255, 0), thickness=2)
 
-    def draw_pose(image, pose):
-        pose_camera = world_to_camera @ pose
-        rvec = pose_camera[:3, :3]
-        tvec = pose_camera[:3, -1]
-        image = cv2.drawFrameAxes(image, camera_matrix, np.zeros(4), rvec, tvec, 0.05)
-        return image
-
-    draw_pose(image, pull.start_pose)
-    draw_pose(image, pull.end_pose)
+    draw_pose(image, pull.start_pose, world_to_camera, camera_matrix)
+    draw_pose(image, pull.end_pose, world_to_camera, camera_matrix)
 
     def draw_corners(image, corners, color):
         corners_image = [project_world_to_image_plane(corner, world_to_camera, camera_matrix) for corner in corners]

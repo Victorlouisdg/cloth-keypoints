@@ -2,9 +2,10 @@ from threading import Thread
 from typing import List
 
 import numpy as np
-from robotiq2f import Robotiq2F85TCP
 from rtde_control import RTDEControlInterface as RTDEControl
 from scipy.spatial.transform import Rotation as R
+
+from robotiq2f import Robotiq2F85TCP
 
 
 def homogeneous_pose_to_position_and_rotvec(pose: np.ndarray):

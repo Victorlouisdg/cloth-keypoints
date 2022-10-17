@@ -85,6 +85,18 @@ class DualArm:
     def arms(self) -> Tuple[RobotArm, RobotArm]:
         return (self.left, self.right)
 
+    def dual_gripper_open(self):
+        self._execute_synchronously(
+            self.left.gripper.open,
+            self.right.gripper.open,
+        )
+
+    def dual_gripper_close(self):
+        self._execute_synchronously(
+            self.left.gripper.close,
+            self.right.gripper.close,
+        )
+
     def dual_move_tcp(self, pose_in_world_left, pose_in_world_right):
         self._execute_synchronously(
             self.left.move_tcp,
@@ -116,7 +128,7 @@ class DualArm:
         )
 
     @staticmethod
-    def _execute_synchronously(func1, func2, args1, args2):
+    def _execute_synchronously(func1, func2, args1: Tuple = (), args2: Tuple = ()):
         thread_1 = Thread(target=func1, args=args1)
         thread_2 = Thread(target=func2, args=args2)
         thread_1.start()

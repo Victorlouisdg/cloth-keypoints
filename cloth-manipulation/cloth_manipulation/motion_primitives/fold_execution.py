@@ -41,8 +41,7 @@ def execute_dual_fold_trajectories(fold_left: FoldTrajectory, fold_right: FoldTr
         dual_arm.left.LINEAR_ACCELERATION,
     )
 
-    dual_arm.left.gripper.close()
-    dual_arm.right.gripper.close()
+    dual_arm.dual_gripper_close()
 
     # execute fold paths
     path_left = fold_left.get_fold_path()
@@ -54,8 +53,7 @@ def execute_dual_fold_trajectories(fold_left: FoldTrajectory, fold_right: FoldTr
         dual_arm.left.LINEAR_ACCELERATION,
     )
 
-    dual_arm.left.gripper.open()
-    dual_arm.right.gripper.open()
+    dual_arm.dual_gripper_open()
 
     # release and retreat with a linear motion
     dual_arm.dual_move_tcp_linear(

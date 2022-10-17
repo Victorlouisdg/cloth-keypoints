@@ -35,6 +35,7 @@ def get_manual_keypoints(image: np.ndarray) -> List[Tuple[int, int]]:
         if key == 8:  # backspace
             keypoints.pop()
         if key == 13:  # enter
+            cv2.destroyWindow(window_name)
             return keypoints
         if key == ord("q"):
             cv2.destroyWindow(window_name)

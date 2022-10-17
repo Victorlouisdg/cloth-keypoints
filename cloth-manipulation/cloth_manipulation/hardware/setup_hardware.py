@@ -3,6 +3,7 @@ Functions that return prebuilt dual arm setups for specific scenarios.
 """
 
 import numpy as np
+from cloth_manipulation.geometry import top_down_orientation
 from cloth_manipulation.hardware.base_classes import DualArm
 from cloth_manipulation.hardware.fake_hardware import FakeArm, FakeGripper
 from cloth_manipulation.hardware.robotiq2f_gripper import Robotiq2F85
@@ -20,27 +21,31 @@ def setup_victor_louise() -> DualArm:
     gripper_louise = Robotiq2F85(ip_louise)
 
     victor_in_world = np.identity(4)
-    victor_in_world[0, -1] -= 0.39
+    victor_in_world[:3, -1] += [-0.39, 0, 0.007]
 
     louise_in_world = np.identity(4)
-    louise_in_world[0, -1] += 0.39
+    louise_in_world[:3, -1] += [0.39, 0, 0.007]
 
     home_victor = victor_in_world.copy()
     home_victor[:3, -1] += [0.2, -0.1, 0.2]
+    home_victor[:3, :3] = top_down_orientation(np.array([0, 1, 0]))
 
     home_louise = louise_in_world.copy()
     home_louise[:3, -1] += [-0.2, -0.1, 0.2]
+    home_louise[:3, :3] = top_down_orientation(np.array([0, 1, 0]))
 
     # home_orientation = list(R.from_euler("yz", [np.pi, -np.pi / 2]).as_rotvec())
 
     out_of_way_victor = victor_in_world.copy()
     out_of_way_victor[:3, -1] += [-0.05, -0.2, 0.2]
+    out_of_way_victor[:3, :3] = top_down_orientation(np.array([1, 0, 0]))
 
     out_of_way_louise = louise_in_world.copy()
     out_of_way_louise[:3, -1] += [0.05, -0.2, 0.2]
+    out_of_way_louise[:3, :3] = top_down_orientation(np.array([-1, 0, 0]))
 
-    victor = UR("victor", victor_in_world, gripper_victor, ip_victor, home_victor, out_of_way_victor)
-    louise = UR("louise", louise_in_world, gripper_louise, ip_louise, home_louise, out_of_way_louise)
+    victor = UR("victor", victor_in_world, home_victor, out_of_way_victor, gripper_victor, ip_victor)
+    louise = UR("louise", louise_in_world, home_louise, out_of_way_louise, gripper_louise, ip_louise)
 
     victor_louise = DualArm(left=victor, right=louise)
     return victor_louise
