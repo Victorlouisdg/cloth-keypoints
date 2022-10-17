@@ -8,7 +8,7 @@ from camera_toolkit.reproject import reproject_to_world_z_plane
 from camera_toolkit.zed2i import Zed2i
 from cloth_manipulation.calibration import load_saved_calibration
 from cloth_manipulation.camera_mapping import CameraMapping
-from cloth_manipulation.controllers import FoldTowelController, ReorientTowelController
+from cloth_manipulation.controllers import FoldTowelController, PickReorientTowelController, ReorientTowelController
 from cloth_manipulation.gui import Panel, draw_cloth_transform_rectangle
 from cloth_manipulation.hardware.setup_hardware import setup_fake_victor_louise
 from cloth_manipulation.input_transform import InputTransform
@@ -44,8 +44,9 @@ camera_matrix = zed.get_camera_matrix()
 victor_louise = setup_fake_victor_louise()
 reorient_towel_controller = ReorientTowelController(victor_louise)
 fold_towel_controller = FoldTowelController(victor_louise)
+pick_reorient_towel_controller = PickReorientTowelController(victor_louise)
 
-controllers = [reorient_towel_controller, fold_towel_controller]
+controllers = [reorient_towel_controller, fold_towel_controller, pick_reorient_towel_controller]
 visualized_controller_index = 0
 
 

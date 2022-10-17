@@ -7,7 +7,8 @@ from cloth_manipulation.geometry import get_ordered_keypoints, move_closer
 from cloth_manipulation.gui import draw_keypoints, draw_pose
 from cloth_manipulation.motion_primitives.fold_execution import execute_dual_fold_trajectories
 from cloth_manipulation.motion_primitives.fold_trajectory_parameterization import CircularFoldTrajectory
-from cloth_manipulation.motion_primitives.pull import TowelReorientPull, execute_pull_primitive
+from cloth_manipulation.motion_primitives.pick_reorient import PickReorientTowelPull, execute_pick_pull_primitive
+from cloth_manipulation.motion_primitives.pull import ReorientTowelPull, execute_pull_primitive
 
 
 class DualArmController(ABC):
@@ -45,7 +46,7 @@ class ReorientTowelController(DualArmController):
         if len(keypoints) != 4:
             return
 
-        pull = TowelReorientPull(keypoints, self.dual_arm)
+        pull = ReorientTowelPull(keypoints, self.dual_arm)
         if pull.average_corner_error() <= self.stopping_error:
             print(f"{__class__}: success, stopping because average corner error = {pull.average_corner_error()}")
             self.finished = True
@@ -55,18 +56,64 @@ class ReorientTowelController(DualArmController):
         self.is_out_of_way = False
 
     def visualize_plan(self, image, keypoints, world_to_camera, camera_matrix):
-        from cloth_manipulation.gui import visualize_towel_reorient_pull  # requires cv2
+        from cloth_manipulation.gui import visualize_reorient_towel_pull  # requires cv2
 
-        if not self.is_out_of_way:
-            return image
+        # if not self.is_out_of_way:
+        #     return image
 
         image = draw_keypoints(image, keypoints, world_to_camera, camera_matrix)
 
         if len(keypoints) != 4:
             return image
 
-        pull = TowelReorientPull(keypoints, self.dual_arm)
-        image = visualize_towel_reorient_pull(image, pull, world_to_camera, camera_matrix)
+        pull = ReorientTowelPull(keypoints, self.dual_arm)
+        image = visualize_reorient_towel_pull(image, pull, world_to_camera, camera_matrix)
+        return image
+
+
+class PickReorientTowelController(DualArmController):
+    def __init__(self, dual_arm, sufficiently_low_corner_error=0.05):
+        self.stopping_error = sufficiently_low_corner_error
+        self.is_out_of_way = False
+        super().__init__(dual_arm)
+
+    def act(self, keypoints):
+        if not self.is_out_of_way:
+            self.dual_arm.dual_move_tcp(self.dual_arm.left.out_of_way_pose, self.dual_arm.right.out_of_way_pose)
+            self.is_out_of_way = True
+            return
+
+        for keypoint in keypoints:
+            assert keypoint.shape[0] == 3
+
+        if self.finished:
+            return
+
+        if len(keypoints) != 4:
+            return
+
+        pull = PickReorientTowelPull(keypoints, self.dual_arm)
+        if pull.average_corner_error() <= self.stopping_error:
+            print(f"{__class__}: success, stopping because average corner error = {pull.average_corner_error()}")
+            self.finished = True
+            return
+
+        execute_pick_pull_primitive(pull, self.dual_arm)
+        self.is_out_of_way = False
+
+    def visualize_plan(self, image, keypoints, world_to_camera, camera_matrix):
+        from cloth_manipulation.gui import visualize_pick_reorient_towel_pull  # requires cv2
+
+        # if not self.is_out_of_way:
+        #     return image
+
+        image = draw_keypoints(image, keypoints, world_to_camera, camera_matrix)
+
+        if len(keypoints) != 4:
+            return image
+
+        pull = PickReorientTowelPull(keypoints, self.dual_arm)
+        image = visualize_pick_reorient_towel_pull(image, pull, world_to_camera, camera_matrix)
         return image
 
 
@@ -112,8 +159,8 @@ class FoldTowelController(DualArmController):
     def visualize_plan(self, image, keypoints, world_to_camera, camera_matrix):
         import cv2
 
-        if not self.is_out_of_way:
-            return image
+        # if not self.is_out_of_way:
+        #     return image
 
         image = draw_keypoints(image, keypoints, world_to_camera, camera_matrix)
 

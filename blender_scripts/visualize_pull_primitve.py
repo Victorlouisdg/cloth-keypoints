@@ -3,7 +3,7 @@ import sys
 
 import airo_blender_toolkit as abt
 import numpy as np
-from cloth_manipulation.motion_primitives.pull import TowelReorientPull
+from cloth_manipulation.motion_primitives.pull import ReorientTowelPull
 from mathutils import Vector
 
 
@@ -44,7 +44,7 @@ def visualize_robots_base_plates(robots_center=(0, 0, 0)):
 
 
 def visualize_pull_primitve(corners):
-    pullprimitive = TowelReorientPull(corners)
+    pullprimitive = ReorientTowelPull(corners)
     start_pose = pullprimitive.get_pull_start_pose()
     end_pose = pullprimitive.get_pull_end_pose()
 

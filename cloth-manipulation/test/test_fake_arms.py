@@ -7,7 +7,7 @@ from cloth_manipulation.motion_primitives.fold_execution import (
     execute_single_fold_trajectory,
 )
 from cloth_manipulation.motion_primitives.fold_trajectory_parameterization import CircularFoldTrajectory
-from cloth_manipulation.motion_primitives.pull import TowelReorientPull, execute_pull_primitive
+from cloth_manipulation.motion_primitives.pull import ReorientTowelPull, execute_pull_primitive
 
 np.set_printoptions(suppress=True)
 np.set_printoptions(precision=2)
@@ -43,7 +43,7 @@ corners_shifted = corners_centered + shift
 print("=== Testing pull execution ===")
 print(f"Towel corners : \n{corners_centered}")
 
-pullprimitive = TowelReorientPull(corners_shifted, victor_louise)
+pullprimitive = ReorientTowelPull(corners_shifted, victor_louise)
 print(pullprimitive)
 execute_pull_primitive(pullprimitive, victor_louise)
 
