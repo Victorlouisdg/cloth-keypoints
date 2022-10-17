@@ -1,6 +1,7 @@
 from typing import List
 
 import numpy as np
+from cloth_manipulation.geometry import top_down_orientation
 
 
 def transformation_matrix_from_position_and_vecs(pos, x, y, z):
@@ -56,7 +57,7 @@ class CircularFoldTrajectory(FoldTrajectory):
         assert t <= 1 and t >= 0
         position_angle = np.pi - t * np.pi
         # the radius was manually tuned on a cloth to find a balance between grasp width along the cloth and grasp robustness given the gripper fingers.
-        radius = self.len / 2.0 - 0.06
+        radius = self.len / 2.0 - 0.04
         position = np.array([radius * np.cos(position_angle), 0, radius * np.sin(position_angle)])
 
         grasp_angle = np.pi / 10
@@ -66,7 +67,8 @@ class CircularFoldTrajectory(FoldTrajectory):
         )  # want the low finger to touch the table so offset from TCP
         position[2] -= 0.008  # 8mm compliance for better grasping
 
-        orientation_angle = max(grasp_angle - t * 2 * grasp_angle, -np.pi / 6)
+        # orientation_angle = max(grasp_angle - t * 2 * grasp_angle, -np.pi / 4)
+        orientation_angle = (t * -np.pi / 4) + (1 - t) * grasp_angle
         x = np.array([np.cos(orientation_angle), 0, np.sin(orientation_angle)])
         x /= np.linalg.norm(x)
         y = np.array([0, -1, 0])
@@ -93,9 +95,11 @@ class CircularFoldTrajectory(FoldTrajectory):
 
         retreat_pose = end_pose
         gripper_forward = end_pose[:3, 2]  # gripper Z-axis
+        gripper_open_direction = np.array([0, 1, 0])  # gripper X-axis
 
         # translate end pose away form gripper forward dir
         retreat_pose[:3, -1] += -offset * gripper_forward
+        retreat_pose[:3, :3] = top_down_orientation(gripper_open_direction)
         return retreat_pose
 
 

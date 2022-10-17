@@ -97,6 +97,14 @@ class DualArm:
             self.right.gripper.close,
         )
 
+    def dual_gripper_move_to_position(self, position):
+        self._execute_synchronously(
+            self.left.gripper.move_to_position,
+            self.right.gripper.move_to_position,
+            (position,),
+            (position,),
+        )
+
     def dual_move_tcp(self, pose_in_world_left, pose_in_world_right):
         self._execute_synchronously(
             self.left.move_tcp,

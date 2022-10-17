@@ -33,6 +33,8 @@ def execute_dual_fold_trajectories(fold_left: FoldTrajectory, fold_right: FoldTr
         fold_right.get_pregrasp_pose(),
     )
 
+    dual_arm.dual_gripper_open()
+
     # grasp with linear motion
     dual_arm.dual_move_tcp_linear(
         fold_left.get_grasp_pose(),
@@ -53,7 +55,7 @@ def execute_dual_fold_trajectories(fold_left: FoldTrajectory, fold_right: FoldTr
         dual_arm.left.LINEAR_ACCELERATION,
     )
 
-    dual_arm.dual_gripper_open()
+    dual_arm.dual_gripper_move_to_position(0.6)
 
     # release and retreat with a linear motion
     dual_arm.dual_move_tcp_linear(

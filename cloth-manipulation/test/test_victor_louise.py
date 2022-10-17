@@ -1,3 +1,5 @@
+import time
+
 from cloth_manipulation.hardware.setup_hardware import setup_victor_louise
 
 victor_louise = setup_victor_louise()
@@ -22,7 +24,11 @@ check_gripper_and_motion(victor)
 check_gripper_and_motion(louise)
 
 victor_louise.dual_gripper_close()
+time.sleep(1)
+victor_louise.dual_gripper_move_to_position(0.6)
+time.sleep(1)
 victor_louise.dual_gripper_open()
+
 
 # Check synchronous movement
 victor_louise.dual_move_tcp_linear(victor.home_pose, louise.home_pose, victor.LINEAR_SPEED, victor.LINEAR_ACCELERATION)
