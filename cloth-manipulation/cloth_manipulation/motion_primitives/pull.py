@@ -42,10 +42,12 @@ class PullPrimitive:
 
 
 class TowelReorientPull(PullPrimitive):
-    def __init__(self, corners, dual_arm: DualArm, inset_amount=0.05):
+    def __init__(self, corners, dual_arm: DualArm, inset_amount=0.05, compliance_distance=0.002):
         self.corners = corners
         self.start_original, self.end_original = self.select_towel_pull(corners)
         self.start, self.end = self.inset_pull_positions(inset_amount)
+        self.start[2] -= compliance_distance
+        self.end[2] -= compliance_distance
         super().__init__(self.start, self.end)
         self.set_robot_and_orientations(self.start, self.end, dual_arm)
 

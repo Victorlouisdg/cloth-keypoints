@@ -31,7 +31,5 @@ victor_louise.dual_gripper_open()
 
 
 # Check synchronous movement
-victor_louise.dual_move_tcp_linear(victor.home_pose, louise.home_pose, victor.LINEAR_SPEED, victor.LINEAR_ACCELERATION)
-victor_louise.dual_move_tcp_linear(
-    victor.out_of_way_pose, louise.out_of_way_pose, victor.LINEAR_SPEED, victor.LINEAR_ACCELERATION
-)
+victor_louise.dual_move_tcp(victor.home_pose, louise.home_pose)
+victor_louise.dual_move_tcp(victor.out_of_way_pose, louise.out_of_way_pose)

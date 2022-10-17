@@ -25,7 +25,7 @@ zed = Zed2i(resolution=resolution, serial_number=CameraMapping.serial_top, fps=3
 _, h, w = zed.get_rgb_image().shape
 InputTransform.crop_start_u = (w - control_image_crop_size) // 2
 InputTransform.crop_width = control_image_crop_size
-InputTransform.crop_start_v = (h - control_image_crop_size) // 2
+InputTransform.crop_start_v = (h - control_image_crop_size) // 2 + 40
 InputTransform.crop_height = control_image_crop_size
 
 panel = Panel(np.zeros((h, w, 3), dtype=np.uint8))

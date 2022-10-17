@@ -27,9 +27,15 @@ class DualArmController(ABC):
 class ReorientTowelController(DualArmController):
     def __init__(self, dual_arm, sufficiently_low_corner_error=0.05):
         self.stopping_error = sufficiently_low_corner_error
+        self.is_out_of_way = False
         super().__init__(dual_arm)
 
     def act(self, keypoints):
+        if not self.is_out_of_way:
+            self.dual_arm.dual_move_tcp(self.dual_arm.left.out_of_way_pose, self.dual_arm.right.out_of_way_pose)
+            self.is_out_of_way = True
+            return
+
         for keypoint in keypoints:
             assert keypoint.shape[0] == 3
 
@@ -46,9 +52,13 @@ class ReorientTowelController(DualArmController):
             return
 
         execute_pull_primitive(pull, self.dual_arm)
+        self.is_out_of_way = False
 
     def visualize_plan(self, image, keypoints, world_to_camera, camera_matrix):
         from cloth_manipulation.gui import visualize_towel_reorient_pull  # requires cv2
+
+        if not self.is_out_of_way:
+            return image
 
         image = draw_keypoints(image, keypoints, world_to_camera, camera_matrix)
 
@@ -62,10 +72,15 @@ class ReorientTowelController(DualArmController):
 
 class FoldTowelController(DualArmController):
     def __init__(self, dual_arm):
-        self.dual_arm = dual_arm
-        self.finished = False
+        super().__init__(dual_arm)
+        self.is_out_of_way = False
 
     def act(self, keypoints: List[np.ndarray]) -> None:
+        if not self.is_out_of_way:
+            self.dual_arm.dual_move_tcp(self.dual_arm.left.out_of_way_pose, self.dual_arm.right.out_of_way_pose)
+            self.is_out_of_way = True
+            return
+
         if self.finished:
             return
 
@@ -74,6 +89,7 @@ class FoldTowelController(DualArmController):
 
         fold_trajectory_left, fold_trajectory_right = FoldTowelController.get_fold_trajectories(keypoints)
         execute_dual_fold_trajectories(fold_trajectory_left, fold_trajectory_right, self.dual_arm)
+        self.out_of_way = False
         self.finished = True
 
     @staticmethod
@@ -88,12 +104,16 @@ class FoldTowelController(DualArmController):
     @staticmethod
     def get_fold_trajectories(keypoints):
         start_left, start_right, end_left, end_right = FoldTowelController.get_starts_and_ends(keypoints)
-        fold_trajectory_left = CircularFoldTrajectory(start_left, end_left)
-        fold_trajectory_right = CircularFoldTrajectory(start_right, end_right)
+        grasp_offset = 0.025 * np.linalg.norm(start_left - start_right)
+        fold_trajectory_left = CircularFoldTrajectory(start_left, end_left, -grasp_offset)
+        fold_trajectory_right = CircularFoldTrajectory(start_right, end_right, grasp_offset)
         return fold_trajectory_left, fold_trajectory_right
 
     def visualize_plan(self, image, keypoints, world_to_camera, camera_matrix):
         import cv2
+
+        if not self.is_out_of_way:
+            return image
 
         image = draw_keypoints(image, keypoints, world_to_camera, camera_matrix)
 
@@ -125,5 +145,48 @@ class FoldTowelController(DualArmController):
 
         image = draw_trajectory(image, fold_trajectory_left, world_to_camera, camera_matrix)
         image = draw_trajectory(image, fold_trajectory_right, world_to_camera, camera_matrix)
+
+        return image
+
+
+class ReorientAndFoldTowelController(DualArmController):
+    def __init__(self, dual_arm):
+        self.dual_arm = dual_arm
+        self.finished = False
+        self.reorient_controller = ReorientTowelController(dual_arm)
+        self.fold_controller = FoldTowelController(dual_arm)
+        self.second_round_started = False
+
+    def act(self, keypoints: List[np.ndarray]) -> None:
+        if self.finished:
+            return
+
+        if len(keypoints) != 4:
+            return
+
+        if not self.reorient_controller.finished:
+            self.reorient_controller.act(keypoints)
+            return
+
+        if not self.fold_controller.finished:
+            self.fold_controller.act(keypoints)
+            return
+
+        if not self.second_round_started:
+            self.reorient_controller.finished = False
+            self.fold_controller.finished = False
+            self.second_round_started = True
+            return
+
+        self.finished = True
+
+    def visualize_plan(self, image, keypoints, world_to_camera, camera_matrix):
+        if not self.reorient_controller.finished:
+            image = self.reorient_controller.visualize_plan(image, keypoints, world_to_camera, camera_matrix)
+            return image
+
+        if not self.fold_controller.finished:
+            image = self.fold_controller.visualize_plan(image, keypoints, world_to_camera, camera_matrix)
+            return image
 
         return image

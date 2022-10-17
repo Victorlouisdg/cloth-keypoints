@@ -17,10 +17,18 @@ class FoldTrajectory:
     def __init__(self, start: np.ndarray, end: np.ndarray) -> None:
 
         # create local Frame
+        end_to_start = start - end
+
+        # shift end closer to start to compensate folding too far
+        fold_too_far_compensation = 0.06
+        end = end + fold_too_far_compensation * end_to_start
+
         self.center = (start + end) / 2
         self.x = end - start
+
         self.len = np.linalg.norm(self.x)
         self.x /= self.len
+
         self.z = np.array([0, 0, 1])
 
         self.y = np.cross(self.z, self.x)
@@ -47,18 +55,28 @@ class FoldTrajectory:
 
 
 class CircularFoldTrajectory(FoldTrajectory):
-    def __init__(self, start, end) -> None:
+    def __init__(self, start, end, grasp_offset: float = 0.0) -> None:
         super().__init__(start, end)
+        self.grasp_offset = grasp_offset
+
+    def get_grasp_pose(self):
+        grasp_pose = self._fold_pose(0)
+        offset = self.y * self.grasp_offset
+        grasp_pose[:3, -1] += offset
+        return grasp_pose
 
     def _fold_pose(self, t) -> np.ndarray:
         """Parameterization of the fold trajectory
         t = 0 is the grasp pose, t = 1 is the final (release) pose
         """
         assert t <= 1 and t >= 0
-        position_angle = np.pi - t * np.pi
+
+        position_start_angle = 0
+        position_end_angle = np.pi - np.pi / 32
+        position_angle = (1 - t) * position_start_angle + t * position_end_angle
         # the radius was manually tuned on a cloth to find a balance between grasp width along the cloth and grasp robustness given the gripper fingers.
-        radius = self.len / 2.0 - 0.04
-        position = np.array([radius * np.cos(position_angle), 0, radius * np.sin(position_angle)])
+        radius = self.len / 2.0 - 0.03
+        position = np.array([-radius * np.cos(position_angle), 0, radius * np.sin(position_angle)])
 
         grasp_angle = np.pi / 10
         # bring finger tip down to zero.
@@ -68,16 +86,18 @@ class CircularFoldTrajectory(FoldTrajectory):
         position[2] -= 0.008  # 8mm compliance for better grasping
 
         # orientation_angle = max(grasp_angle - t * 2 * grasp_angle, -np.pi / 4)
-        orientation_angle = (t * -np.pi / 4) + (1 - t) * grasp_angle
+        end_angle = -np.pi / 6
+        orientation_angle = (t * end_angle) + (1 - t) * grasp_angle
         x = np.array([np.cos(orientation_angle), 0, np.sin(orientation_angle)])
         x /= np.linalg.norm(x)
         y = np.array([0, -1, 0])
 
         z = np.cross(x, y)
+        # Refactor TODO
         return self.fold_frame_in_robot_frame @ transformation_matrix_from_position_and_vecs(position, x, y, z)
 
     def get_pregrasp_pose(self, offset=0.05):
-        grasp_pose = self._fold_pose(0)
+        grasp_pose = self.get_grasp_pose()
         end_pose = self._fold_pose(1)
         pregrasp_pose = grasp_pose
 

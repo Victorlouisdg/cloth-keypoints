@@ -18,7 +18,7 @@ h, w, c = image.shape
 new_size = 600
 InputTransform.crop_start_u = (w - new_size) // 2
 InputTransform.crop_width = new_size
-InputTransform.crop_start_v = (h - new_size) // 2
+InputTransform.crop_start_v = (h - new_size) // 2 + 40
 InputTransform.crop_height = new_size
 
 print("Press q to quit.")
