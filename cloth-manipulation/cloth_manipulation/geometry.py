@@ -1,6 +1,7 @@
 import numpy as np
 from scipy.spatial.transform import Rotation
 
+
 def angle_2D(v0, v1):
     # TODO: document.
     x1, y1, *_ = v0
@@ -47,3 +48,19 @@ def get_short_and_long_edges(ordered_corners):
     long_edge_pair = edge_pairs[np.argmin(edge_pairs_mean_length)]
     long_edges = [edges[eid] for eid in long_edge_pair]
     return short_edges, long_edges
+
+
+def move_closer(point0: np.ndarray, point1: np.ndarray, distance: float):
+    """Moves two points closer to each other by a distance. Each point will have moved half of this distance."""
+    direction = point1 - point0
+    direction /= np.linalg.norm(direction)
+    point0 += (distance / 2) * direction
+    point1 -= (distance / 2) * direction
+    return point0, point1
+
+
+def top_down_orientation(gripper_open_direction) -> np.ndarray:
+    X = gripper_open_direction / np.linalg.norm(gripper_open_direction)  # np.array([-1, 0, 0])
+    Z = np.array([0, 0, -1])
+    Y = np.cross(Z, X)
+    return np.column_stack([X, Y, Z])

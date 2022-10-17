@@ -1,12 +1,12 @@
 import numpy as np
-from cloth_manipulation.ur_robotiq_dual_arm_interface import DualArmUR, UR, homogeneous_pose_to_position_and_rotvec
-from cloth_manipulation.utils import angle_2D, get_ordered_keypoints, get_short_and_long_edges, rotate_point
+from cloth_manipulation.geometry import angle_2D, get_ordered_keypoints, get_short_and_long_edges, rotate_point
+from cloth_manipulation.hardware.base_classes import DualArm, RobotArm
 from scipy.spatial.transform import Rotation
 
 
 class PullPrimitive:
-    def __init__(self, start: np.ndarray, end: np.ndarray, robot: UR = None) -> None:
-        self.robot = robot 
+    def __init__(self, start: np.ndarray, end: np.ndarray, robot: RobotArm = None) -> None:
+        self.robot = robot
         self.start_pose = self.get_topdown_pose_from_position(start)
         self.end_pose = self.get_topdown_pose_from_position(end)
 
@@ -20,7 +20,6 @@ class PullPrimitive:
         pose[:3, :3] = gripper_orientation
         pose[:3, 3] = position
         return pose
-
 
     def get_pre_grasp_pose(self):
         pregrasp_pose = np.copy(self.get_pull_start_pose())
@@ -43,12 +42,12 @@ class PullPrimitive:
 
 
 class TowelReorientPull(PullPrimitive):
-    def __init__(self, corners,dual_arm: DualArmUR, inset_amount=0.05):
+    def __init__(self, corners, dual_arm: DualArm, inset_amount=0.05):
         self.corners = corners
         self.start_original, self.end_original = self.select_towel_pull(corners)
         self.start, self.end = self.inset_pull_positions(inset_amount)
         super().__init__(self.start, self.end)
-        self.set_robot_and_orientations(self.start,self.end,dual_arm)
+        self.set_robot_and_orientations(self.start, self.end, dual_arm)
 
     @staticmethod
     def vector_cosine(v0, v1):
@@ -58,7 +57,6 @@ class TowelReorientPull(PullPrimitive):
     def closest_point(point, candidates):
         distances = [np.linalg.norm(point - candidate) for candidate in candidates]
         return candidates[np.argmin(distances)]
-
 
     @staticmethod
     def top_down_orientation(gripper_open_direction):
@@ -71,7 +69,7 @@ class TowelReorientPull(PullPrimitive):
     def tilted_pull_orientation(pull_location, robot_location, tilt_angle=15):
         robot_to_pull = pull_location - robot_location
         if np.linalg.norm(robot_to_pull) < 0.35:
-            tilt_angle = -tilt_angle # tilt inwards
+            tilt_angle = -tilt_angle  # tilt inwards
         gripper_open_direction = robot_to_pull
         top_down = TowelReorientPull.top_down_orientation(gripper_open_direction)
 
@@ -81,7 +79,7 @@ class TowelReorientPull(PullPrimitive):
         gripper_orienation = rotation.as_matrix() @ top_down
 
         return gripper_orienation
-    
+
     @staticmethod
     def get_desired_corners(ordered_corners):
         corners = ordered_corners
@@ -146,7 +144,6 @@ class TowelReorientPull(PullPrimitive):
         start_margin_vector = start_to_center_unit * margin
         start = self.start_original + start_margin_vector
 
-
         desired_corners = np.array(self.desired_corners)
         desired_towel_center = np.mean(desired_corners, axis=0)
         end_to_center = desired_towel_center - self.end_original
@@ -160,63 +157,57 @@ class TowelReorientPull(PullPrimitive):
             [np.linalg.norm(corner - desired) for corner, desired in zip(self.ordered_corners, self.desired_corners)]
         )
 
-    def set_robot_and_orientations(self,start,end, dual_arm: DualArmUR):
-        for robot in [dual_arm.victor_ur, dual_arm.louise_ur]:
-            start_orientation = self.tilted_pull_orientation(start,robot.robot_in_world_position)
-            end_orientation = self.tilted_pull_orientation(end,robot.robot_in_world_position)
+    def set_robot_and_orientations(self, start, end, dual_arm: DualArm):
+        for robot in dual_arm.arms:
+            start_orientation = self.tilted_pull_orientation(start, robot.robot_in_world_pose[:3, -1])
+            end_orientation = self.tilted_pull_orientation(end, robot.robot_in_world_pose[:3, -1])
 
             start_pose = np.eye(4)
-            start_pose[:3,:3] = start_orientation
-            start_pose[:3,3] = start
+            start_pose[:3, :3] = start_orientation
+            start_pose[:3, 3] = start
             end_pose = np.eye(4)
-            end_pose[:3,:3] = end_orientation
-            end_pose[:3,3] = end
+            end_pose[:3, :3] = end_orientation
+            end_pose[:3, 3] = end
 
-            if robot.is_world_pose_reachable(homogeneous_pose_to_position_and_rotvec(start_pose)) and robot.is_world_pose_reachable(homogeneous_pose_to_position_and_rotvec(end_pose)):
-                self.start_pose,self.end_pose, self.robot = start_pose, end_pose, robot
+            if not robot.is_pose_unsafe(start_pose) and not robot.is_pose_unsafe(end_pose):
+                self.start_pose, self.end_pose, self.robot = start_pose, end_pose, robot
                 return
-        
-        raise ValueError(f" pull with start = {start} and end={end} could not be executed by either robot")
+
+        raise ValueError(f"Pull could not be executed by either robot. \nStart: \n{start} \nEnd: \n{end}")
 
 
-def execute_pull_primitive(pull_primitive: PullPrimitive, dual_arm: DualArmUR):
-
-    # decide which robot to use
+def execute_pull_primitive(pull_primitive: PullPrimitive, dual_arm: DualArm):
+    # Decide which robot to use. The TowelReorientPull already chooses this itself.
     if isinstance(pull_primitive, TowelReorientPull):
-        ur = pull_primitive.robot
+        robot = pull_primitive.robot
     else:
-        reachable_by_victor = (
-            dual_arm.victor_ur.is_world_pose_reachable(
-                homogeneous_pose_to_position_and_rotvec(pull_primitive.get_pull_start_pose())
-            )
-            and dual_arm.victor_ur.is_world_pose_reachable(
-                homogeneous_pose_to_position_and_rotvec(pull_primitive.get_pull_end_pose())
-            )
-            and dual_arm.victor_ur.is_world_pose_reachable(
-                homogeneous_pose_to_position_and_rotvec(pull_primitive.get_pull_retreat_pose())
-            )
+        left_arm = dual_arm.left
+        safe_for_left_arm = (
+            not left_arm.is_pose_unsafe(pull_primitive.get_pull_start_pose())
+            and not left_arm.is_pose_unsafe(pull_primitive.get_pull_end_pose())
+            and not left_arm.is_pose_unsafe(pull_primitive.get_pull_retreat_pose())
         )
+        robot = left_arm if safe_for_left_arm else dual_arm.right_arm
 
-        if reachable_by_victor:
-            ur = dual_arm.victor_ur
-        else:
-            ur = dual_arm.louise_ur
-
-    ur.gripper.gripper.move_to_position(200)  # little bit more compliant if finger tips don't touch
+    robot.gripper.move_to_position(0.8)  # little bit more compliant if finger tips don't touch
     # go to home pose
-    ur.moveL(ur.home_pose, vel=2 * ur.DEFAULT_LINEAR_VEL)
+    robot.move_tcp(robot.home_pose)
     # go to prepull pose
-    ur.moveL(
-        homogeneous_pose_to_position_and_rotvec(pull_primitive.get_pre_grasp_pose()), vel=2 * ur.DEFAULT_LINEAR_VEL
+    robot.move_tcp(pull_primitive.get_pre_grasp_pose())
+    # move down in a straight line
+    robot.move_tcp_linear(
+        pull_primitive.get_pull_start_pose(), speed=robot.LINEAR_SPEED, acceleration=robot.LINEAR_ACCELERATION
     )
-    # move down
-    ur.moveL(homogeneous_pose_to_position_and_rotvec(pull_primitive.get_pull_start_pose()))
+    # pull in a straight
+    robot.move_tcp_linear(
+        pull_primitive.get_pull_end_pose(), speed=robot.LINEAR_SPEED, acceleration=robot.LINEAR_ACCELERATION
+    )
 
-    # pull
-    ur.moveL(homogeneous_pose_to_position_and_rotvec(pull_primitive.get_pull_end_pose()))
+    # move straight up and away
+    robot.move_tcp_linear(
+        pull_primitive.get_pull_retreat_pose(), speed=robot.LINEAR_SPEED, acceleration=robot.LINEAR_ACCELERATION
+    )
+    robot.gripper.open()
 
-    # move up
-    ur.moveL(homogeneous_pose_to_position_and_rotvec(pull_primitive.get_pull_retreat_pose()))
-    ur.gripper.gripper.open()
     # move to home pose
-    ur.moveL(ur.home_pose, vel=2 * ur.DEFAULT_LINEAR_VEL)
+    robot.move_tcp(robot.home_pose)

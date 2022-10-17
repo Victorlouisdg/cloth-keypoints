@@ -4,9 +4,13 @@ from collections import deque
 import cv2
 import numpy as np
 import pyzed.sl as sl
+from camera_toolkit.reproject import reproject_to_world_z_plane
 from camera_toolkit.zed2i import Zed2i
+from cloth_manipulation.calibration import load_saved_calibration
 from cloth_manipulation.camera_mapping import CameraMapping
-from cloth_manipulation.gui import Panel, draw_cloth_transform_rectangle, insert_transformed_into_original
+from cloth_manipulation.controllers import FoldTowelController, ReorientTowelController
+from cloth_manipulation.gui import Panel, draw_cloth_transform_rectangle
+from cloth_manipulation.hardware.setup_hardware import setup_fake_victor_louise
 from cloth_manipulation.input_transform import InputTransform
 from cloth_manipulation.observers import KeypointObserver
 
@@ -34,17 +38,44 @@ cv2.namedWindow(window_name)
 loop_time_queue = deque(maxlen=15)
 fps = -1
 
+world_to_camera = load_saved_calibration()
+camera_matrix = zed.get_camera_matrix()
+
+victor_louise = setup_fake_victor_louise()
+reorient_towel_controller = ReorientTowelController(victor_louise)
+fold_towel_controller = FoldTowelController(victor_louise)
+
+controllers = [reorient_towel_controller, fold_towel_controller]
+visualized_controller_index = 0
+
+
+def mouse_callback(event, x, y, flags, parm):
+    global visualized_controller_index
+
+    if event == cv2.EVENT_LBUTTONDOWN:
+        visualized_controller_index += 1
+        visualized_controller_index %= len(controllers)
+
+
+cv2.setMouseCallback(window_name, mouse_callback)
+
 while True:
     start_time = time.time()
     image = zed.get_rgb_image()
 
     keypoints = keypoint_observer.observe(image)
-    visualization_image = keypoint_observer.visualize_last_observation()
+    # visualization_image = keypoint_observer.visualize_last_observation()
 
     image = zed.image_shape_torch_to_opencv(image)
     image = image.copy()
-    insert_transformed_into_original(image, visualization_image)
+    # insert_transformed_into_original(image, visualization_image)
     image = draw_cloth_transform_rectangle(image)
+
+    if len(keypoints) == 4:
+        controller = controllers[visualized_controller_index]
+        keypoints_in_camera = InputTransform.reverse_transform_keypoints(np.array(keypoints))
+        keypoints_in_world = reproject_to_world_z_plane(keypoints_in_camera, camera_matrix, world_to_camera)
+        image = controller.visualize_plan(image, keypoints_in_world, world_to_camera, camera_matrix)
 
     panel.fill_image_buffer(image)
     cv2.putText(panel.image_buffer, f"fps: {fps:.1f}", (w - 200, 50), cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 255, 255), 2)
