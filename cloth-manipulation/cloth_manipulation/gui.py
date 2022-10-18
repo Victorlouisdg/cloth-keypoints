@@ -177,7 +177,9 @@ def visualize_reorient_towel_pull(image, pull: ReorientTowelPull, world_to_camer
     return image
 
 
-def visualize_pick_reorient_towel_pull(image, pull: ReorientTowelPull, world_to_camera, camera_matrix):
+def visualize_pick_reorient_towel_pull(
+    image, grasp, pull: ReorientTowelPull, pull_end_pose, world_to_camera, camera_matrix
+):
     def error_color_map(error):
         green = (0, 255, 0)
         red = (0, 0, 255)
@@ -192,8 +194,7 @@ def visualize_pick_reorient_towel_pull(image, pull: ReorientTowelPull, world_to_
     # end = project_world_to_image_plane(pull.end, world_to_camera, camera_matrix).astype(int)
     # image = cv2.line(image, start.T, end.T, color=(255, 255, 0), thickness=2)
 
-    # draw_pose(image, pull.start_pose, world_to_camera, camera_matrix)
-    # draw_pose(image, pull.end_pose, world_to_camera, camera_matrix)
+    # draw_pose(image, grasp.get_pregrasp_pose(), world_to_camera, camera_matrix)
 
     def draw_corners(image, corners, color):
         corners_image = [project_world_to_image_plane(corner, world_to_camera, camera_matrix) for corner in corners]
@@ -207,28 +208,13 @@ def visualize_pick_reorient_towel_pull(image, pull: ReorientTowelPull, world_to_
     for corner, desired_corner in zip(pull.ordered_corners, pull.desired_corners):
         project_world_to_image_plane(corner, world_to_camera, camera_matrix).astype(int)
         desired_corner_image = project_world_to_image_plane(desired_corner, world_to_camera, camera_matrix).astype(int)
-        np.linalg.norm(desired_corner - corner)
-        # image = cv2.line(image, corner_image.T, desired_corner_image.T, color=error_color_map(error), thickness=2)
         image = cv2.circle(image, desired_corner_image.T, 3, color=(0, 255, 0), thickness=4)
 
-    left_start_image = project_world_to_image_plane(pull.left_robot_start, world_to_camera, camera_matrix).astype(int)
-    left_end_image = project_world_to_image_plane(pull.left_robot_end, world_to_camera, camera_matrix).astype(int)
-    cv2.line(image, left_start_image, left_end_image, color=(255, 0, 0), thickness=3)
+    start_image = project_world_to_image_plane(pull.start, world_to_camera, camera_matrix).astype(int)
+    end_image = project_world_to_image_plane(pull.end, world_to_camera, camera_matrix).astype(int)
+    cv2.line(image, start_image, end_image, color=(255, 0, 255), thickness=3)
 
-    right_start_image = project_world_to_image_plane(pull.right_robot_start, world_to_camera, camera_matrix).astype(
-        int
-    )
-    right_end_image = project_world_to_image_plane(pull.right_robot_end, world_to_camera, camera_matrix).astype(int)
-    cv2.line(image, right_start_image, right_end_image, color=(0, 0, 255), thickness=3)
-    # left_pull_image = project_world_to_image_plane(pull.left_robot_pull, world_to_camera, camera_matrix).astype(int)
-    # image = cv2.circle(image, left_pull_image.T, 5, color=(255,0,0), thickness=6)
-
-    # right_pull_image = project_world_to_image_plane(pull.right_robot_pull, world_to_camera, camera_matrix).astype(int)
-    # image = cv2.circle(image, right_pull_image.T, 5, color=(0,0,255), thickness=6)
-
-    average_error = pull.average_corner_error()
-    text = f"Average corner error: {average_error:.3f} m"
-    font = cv2.FONT_HERSHEY_SIMPLEX
-    image = cv2.putText(image, text, (50, 50), font, 1, error_color_map(average_error), 2)
+    draw_pose(image, grasp.get_grasp_pose(), world_to_camera, camera_matrix)
+    draw_pose(image, pull_end_pose, world_to_camera, camera_matrix)
 
     return image

@@ -9,13 +9,21 @@ from pathlib import Path
 import cv2
 import numpy as np
 import pyzed.sl as sl
+from camera_toolkit.reproject import reproject_to_world_z_plane
 from camera_toolkit.zed2i import Zed2i
+from cloth_manipulation.calibration import load_saved_calibration
 from cloth_manipulation.camera_mapping import CameraMapping
+from cloth_manipulation.controllers import ReorientAndFoldTowelController
 from cloth_manipulation.gui import FourPanels, Panel
+from cloth_manipulation.hardware.setup_hardware import setup_victor_louise
 from cloth_manipulation.input_transform import InputTransform
 from cloth_manipulation.observers import KeypointObserver
 
 keypoint_observer = KeypointObserver()
+
+victor_louise = setup_victor_louise()
+
+world_to_camera = load_saved_calibration()
 
 # resolution = sl.RESOLUTION.HD720
 
@@ -37,6 +45,9 @@ serial_numbers = [CameraMapping.serial_top, CameraMapping.serial_side, CameraMap
 resolutions = [top_camera_resolution, sl.RESOLUTION.HD720, sl.RESOLUTION.HD720]
 zeds = {n: Zed2i(resolution=r, serial_number=n, fps=30) for r, n in zip(resolutions, serial_numbers)}
 
+camera_matrix = zeds[CameraMapping.serial_top].get_camera_matrix()
+
+
 # Configure custom project-wide InputTransform based on camera, resolution, etc.
 init_image = zeds[CameraMapping.serial_top].get_rgb_image()
 _, h, w = init_image.shape
@@ -53,16 +64,18 @@ control_image_index = -1
 control_image = None
 top_left_panel = panels.top_left
 trial = 0
-max_trials = 10
+max_trials = 6
+controller = None
 
 
 class Modes(IntEnum):
     CAMERA_FEED = 0
-    SINGLE_DETECTION = 1
-    LIVE_DETECTION = 2
+    PREVIEW_PLAN = 1
+    FOLDING = 2
 
 
 mode = 0  # Modes.CAMERA_FEED
+prev_mode = None
 
 already_detected = False
 
@@ -77,6 +90,11 @@ def control_loop(keypoint_observer):
     global trial
     global max_trials
     global init_image
+    global controller
+    global world_to_camera
+    global camera_matrix
+    global prev_mode
+    global victor_louise
 
     while not stop_control_thread:
         if init_image is not None:
@@ -90,30 +108,23 @@ def control_loop(keypoint_observer):
             print("No control image.")
             continue
 
+        if controller is None or controller.finished:
+            mode = Modes.CAMERA_FEED
+            controller = ReorientAndFoldTowelController(victor_louise)
+
         _mode = mode  # copy mode locally so it cant change within a loop iteration
 
-        if _mode != Modes.SINGLE_DETECTION:
-            already_detected = False
+        keypoints = keypoint_observer.observe(control_image)
+        keypoints_in_camera = InputTransform.reverse_transform_keypoints(np.array(keypoints))
+        keypoints_in_world = reproject_to_world_z_plane(keypoints_in_camera, camera_matrix, world_to_camera)
 
-        if _mode == Modes.CAMERA_FEED:
-            image = InputTransform.transform_image(control_image)
-            image = Zed2i.image_shape_torch_to_opencv(image)
-            image = image.copy()
-        elif _mode == Modes.SINGLE_DETECTION:
-            if not already_detected:
-                start = time.time()
-                keypoint_observer.observe(control_image)
-                print(f"Observation took {time.time()-start:.2f}")
-                already_detected = True
-                trial += 1
-                cv2.imwrite(str(output_dir / f"trial_input_{trial}.png"), image)
-                image = keypoint_observer.visualize_last_observation(competition_format=True)
-                cv2.imwrite(str(output_dir / f"trial_annotated_{trial}.png"), image)
-            else:
-                image = keypoint_observer.visualize_last_observation(competition_format=True)
-        else:
-            keypoint_observer.observe(control_image)
-            image = keypoint_observer.visualize_last_observation()
+        image = Zed2i.image_shape_torch_to_opencv(control_image)
+        image = image.copy()
+        if _mode == Modes.PREVIEW_PLAN or _mode == Modes.FOLDING:
+            image = controller.visualize_plan(image, keypoints_in_world, world_to_camera, camera_matrix)
+
+        if _mode == Modes.FOLDING and not prev_mode == Modes.FOLDING:
+            trial += 1
 
         buffer = np.zeros_like(top_left_panel.image_buffer)
         Panel.fit_image_into_buffer(image, buffer)
@@ -126,6 +137,11 @@ def control_loop(keypoint_observer):
         buffer = cv2.putText(buffer, text, (20, 80), font, 1, (0, 255, 0), 2)
 
         top_left_panel.image_buffer[:, :, :] = buffer[:, :, :]
+
+        if _mode == Modes.FOLDING:
+            controller.act(keypoints_in_world)
+
+        prev_mode = _mode
 
 
 control_thread = threading.Thread(target=control_loop, args=(keypoint_observer,))
@@ -188,13 +204,17 @@ while True:
         for zed in zeds.values():
             zed.close()
         break
-    if key == ord("l"):
-        mode = Modes.LIVE_DETECTION
+    if key == ord("f") and mode == Modes.CAMERA_FEED:
+        mode = Modes.FOLDING
+    if key == ord("p"):
+        mode = Modes.PREVIEW_PLAN
     if key == ord("c"):
         mode = Modes.CAMERA_FEED
-    if key == ord("s"):
-        if mode == Modes.CAMERA_FEED:
-            mode = Modes.SINGLE_DETECTION
+    if key == ord("r"):
+        mode = Modes.CAMERA_FEED
+        controller = None
+        control_thread = threading.Thread(target=control_loop, args=(keypoint_observer,))
+        control_thread.start()
 
     end_time = time.time()
     loop_time = end_time - start_time

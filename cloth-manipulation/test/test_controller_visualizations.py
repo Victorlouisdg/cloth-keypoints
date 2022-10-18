@@ -8,11 +8,12 @@ from camera_toolkit.reproject import reproject_to_world_z_plane
 from camera_toolkit.zed2i import Zed2i
 from cloth_manipulation.calibration import load_saved_calibration
 from cloth_manipulation.camera_mapping import CameraMapping
-from cloth_manipulation.controllers import FoldTowelController, PickReorientTowelController, ReorientTowelController
+from cloth_manipulation.controllers import FoldTowelController, ReorientTowelController
 from cloth_manipulation.gui import Panel, draw_cloth_transform_rectangle
 from cloth_manipulation.hardware.setup_hardware import setup_fake_victor_louise
 from cloth_manipulation.input_transform import InputTransform
-from cloth_manipulation.motion_primitives.grasp import GraspOrthogonalTowelEdgeController
+from cloth_manipulation.motion_primitives.grasp import GraspTowelPointController
+from cloth_manipulation.motion_primitives.pick_reorient import PickReorientTowelController
 from cloth_manipulation.observers import KeypointObserver
 
 keypoint_observer = KeypointObserver()
@@ -46,9 +47,9 @@ victor_louise = setup_fake_victor_louise()
 reorient_towel_controller = ReorientTowelController(victor_louise)
 fold_towel_controller = FoldTowelController(victor_louise)
 pick_reorient_towel_controller = PickReorientTowelController(victor_louise)
-grasp_controler = GraspOrthogonalTowelEdgeController(victor_louise)
+grasp_controler = GraspTowelPointController(victor_louise)
 
-controllers = [grasp_controler, reorient_towel_controller, fold_towel_controller]  # , pick_reorient_towel_controller]
+controllers = [pick_reorient_towel_controller, grasp_controler, reorient_towel_controller, fold_towel_controller]
 
 for controller in controllers:
     controller.is_out_of_way = True

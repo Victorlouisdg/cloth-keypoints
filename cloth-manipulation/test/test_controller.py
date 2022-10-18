@@ -10,7 +10,8 @@ from cloth_manipulation.camera_mapping import CameraMapping
 from cloth_manipulation.controllers import FoldTowelController, ReorientTowelController
 from cloth_manipulation.hardware.setup_hardware import setup_victor_louise
 from cloth_manipulation.manual_keypoints import get_manual_keypoints
-from cloth_manipulation.motion_primitives.grasp import GraspOrthogonalTowelEdgeController
+from cloth_manipulation.motion_primitives.grasp import GraspTowelPointController
+from cloth_manipulation.motion_primitives.pick_reorient import PickReorientTowelController
 
 
 def run_and_visualize(controller, victor_louise):
@@ -70,7 +71,8 @@ if __name__ == "__main__":
     controllers = {
         FoldTowelController.__name__: FoldTowelController(victor_louise),
         ReorientTowelController.__name__: ReorientTowelController(victor_louise),
-        GraspOrthogonalTowelEdgeController.__name__: GraspOrthogonalTowelEdgeController(victor_louise),
+        GraspTowelPointController.__name__: GraspTowelPointController(victor_louise),
+        PickReorientTowelController.__name__: PickReorientTowelController(victor_louise),
     }
     controller = controllers[args.controller]
     run_and_visualize(controller, victor_louise)

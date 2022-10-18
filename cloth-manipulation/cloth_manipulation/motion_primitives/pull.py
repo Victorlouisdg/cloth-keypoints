@@ -141,9 +141,10 @@ class ReorientTowelPull(PullPrimitive):
             alignment = ReorientTowelPull.vector_cosine(center_to_corner, pull)
             scores.append(alignment)
 
-        start = corners[np.argmax(scores)]
-        end = desired_corners[np.argmax(scores)]
-        return start, end
+        best_id = np.argmax(scores)
+        start = corners[best_id]
+        end = desired_corners[best_id]
+        return start, end, best_id
 
     def select_towel_pull(self, corners):
         corners = np.array(corners)
@@ -154,7 +155,7 @@ class ReorientTowelPull(PullPrimitive):
         self.desired_corners = desired_corners
         self.centered_corners = centered_corners
 
-        start, end = ReorientTowelPull.select_best_pull_positions(corners, desired_corners)
+        start, end, _ = ReorientTowelPull.select_best_pull_positions(corners, desired_corners)
         return start, end
 
     def inset_pull_positions(self, margin=0.05):
