@@ -58,10 +58,10 @@ class ReorientTowelController(DualArmController):
     def visualize_plan(self, image, keypoints, world_to_camera, camera_matrix):
         from cloth_manipulation.gui import visualize_reorient_towel_pull  # requires cv2
 
-        # if not self.is_out_of_way:
-        #     return image
-
         image = draw_keypoints(image, keypoints, world_to_camera, camera_matrix)
+
+        if not self.is_out_of_way:
+            return image
 
         if len(keypoints) != 4:
             return image
@@ -159,10 +159,10 @@ class FoldTowelController(DualArmController):
     def visualize_plan(self, image, keypoints, world_to_camera, camera_matrix):
         import cv2
 
-        # if not self.is_out_of_way:
-        #     return image
-
         image = draw_keypoints(image, keypoints, world_to_camera, camera_matrix)
+
+        if not self.is_out_of_way:
+            return image
 
         if len(keypoints) != 4:
             return

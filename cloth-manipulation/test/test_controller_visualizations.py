@@ -46,7 +46,11 @@ reorient_towel_controller = ReorientTowelController(victor_louise)
 fold_towel_controller = FoldTowelController(victor_louise)
 pick_reorient_towel_controller = PickReorientTowelController(victor_louise)
 
-controllers = [reorient_towel_controller, fold_towel_controller, pick_reorient_towel_controller]
+controllers = [reorient_towel_controller, fold_towel_controller]  # , pick_reorient_towel_controller]
+
+for controller in controllers:
+    controller.is_out_of_way = True
+
 visualized_controller_index = 0
 
 
