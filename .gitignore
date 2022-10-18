@@ -1,3 +1,5 @@
+src/
+**results/
 **assets/
 **egg-info/
 **__pycache__/

@@ -30,7 +30,10 @@ class KeypointObserver:
 
         return keypoints
 
-    def visualize_last_observation(self, show_heatmap=True) -> np.ndarray:
+    def visualize_last_observation(self, show_heatmap=True, competition_format=False) -> np.ndarray:
+        if competition_format:
+            show_heatmap = False
+
         if show_heatmap:
             overlayed = overlay_image_with_heatmap(self.image_batched, self.heatmap_channel_batched)
             overlayed = overlayed.squeeze(0).numpy()
@@ -42,5 +45,10 @@ class KeypointObserver:
         image = image.copy()
 
         for keypoint in self.keypoints:
-            image = cv2.circle(image, keypoint, 5, (0, 255, 0))
+            if competition_format:
+                image = cv2.circle(image, keypoint, 1, (0, 0, 255), thickness=1)
+                image = cv2.circle(image, keypoint, 7, (0, 0, 255), thickness=1, lineType=cv2.LINE_AA)
+            else:
+                image = cv2.circle(image, keypoint, 1, (0, 255, 0), thickness=1)
+                image = cv2.circle(image, keypoint, 10, (0, 255, 0))
         return image
