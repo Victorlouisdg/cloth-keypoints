@@ -7,11 +7,14 @@ from camera_toolkit.reproject import reproject_to_world_z_plane
 from camera_toolkit.zed2i import Zed2i
 from cloth_manipulation.calibration import load_saved_calibration
 from cloth_manipulation.camera_mapping import CameraMapping
-from cloth_manipulation.controllers import FoldTowelController, ReorientTowelController
+from cloth_manipulation.controllers import (
+    FoldTowelController,
+    GraspTowelPointController,
+    PickReorientTowelController,
+    ReorientTowelController,
+)
 from cloth_manipulation.hardware.setup_hardware import setup_victor_louise
 from cloth_manipulation.manual_keypoints import get_manual_keypoints
-from cloth_manipulation.motion_primitives.grasp import GraspTowelPointController
-from cloth_manipulation.motion_primitives.pick_reorient import PickReorientTowelController
 
 
 def run_and_visualize(controller, victor_louise):

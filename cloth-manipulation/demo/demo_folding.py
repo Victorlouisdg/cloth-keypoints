@@ -115,12 +115,12 @@ def control_loop(keypoint_observer):
         _mode = mode  # copy mode locally so it cant change within a loop iteration
 
         keypoints = keypoint_observer.observe(control_image)
-        keypoints_in_camera = InputTransform.reverse_transform_keypoints(np.array(keypoints))
-        keypoints_in_world = reproject_to_world_z_plane(keypoints_in_camera, camera_matrix, world_to_camera)
 
         image = Zed2i.image_shape_torch_to_opencv(control_image)
         image = image.copy()
         if _mode == Modes.PREVIEW_PLAN or _mode == Modes.FOLDING:
+            keypoints_in_camera = InputTransform.reverse_transform_keypoints(np.array(keypoints))
+            keypoints_in_world = reproject_to_world_z_plane(keypoints_in_camera, camera_matrix, world_to_camera)
             image = controller.visualize_plan(image, keypoints_in_world, world_to_camera, camera_matrix)
 
         if _mode == Modes.FOLDING and not prev_mode == Modes.FOLDING:

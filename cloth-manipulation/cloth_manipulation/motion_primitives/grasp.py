@@ -1,92 +1,9 @@
 from abc import ABC, abstractmethod
-from typing import List
 
 import numpy as np
-from cloth_manipulation.controllers import DualArmController
-from cloth_manipulation.geometry import get_ordered_keypoints, pose_from_orientation_and_position
-from cloth_manipulation.gui import draw_keypoints, draw_pose
+from cloth_manipulation.geometry import pose_from_orientation_and_position
 from cloth_manipulation.hardware.base_classes import DualArm
 from scipy.spatial.transform import Rotation
-
-
-class GraspTowelPointController(DualArmController):
-    def __init__(self, dual_arm):
-        self.dual_arm = dual_arm
-        self.finished = False
-        self.is_out_of_way = False
-
-    def get_grasp(self, keypoints):
-        corners = get_ordered_keypoints(keypoints)
-        diagonal = corners[3] - corners[1]
-        grasp = GraspTowelPoint(corners[1], diagonal)
-        return grasp
-
-    def act(self, keypoints: List[np.ndarray]) -> None:
-        if not self.is_out_of_way:
-            self.dual_arm.dual_move_tcp(self.dual_arm.left.out_of_way_pose, self.dual_arm.right.out_of_way_pose)
-            self.is_out_of_way = True
-            return
-
-        if self.finished:
-            return
-
-        if len(keypoints) != 4:
-            return
-
-        grasp = self.get_grasp(keypoints)
-        execute_grasp(grasp, self.dual_arm)
-        self.out_of_way = False
-        self.finished = True
-
-    def visualize_plan(self, image, keypoints, world_to_camera, camera_matrix):
-        image = draw_keypoints(image, keypoints, world_to_camera, camera_matrix)
-
-        grasp = self.get_grasp(keypoints)
-
-        image = draw_pose(image, grasp.get_grasp_pose(), world_to_camera, camera_matrix)
-        image = draw_pose(image, grasp.get_pregrasp_pose(), world_to_camera, camera_matrix)
-
-        return image
-
-
-class GraspOrthogonalTowelEdgeController(DualArmController):
-    def __init__(self, dual_arm):
-        self.dual_arm = dual_arm
-        self.finished = False
-        self.is_out_of_way = False
-
-    def get_grasp(self, keypoints):
-        corners = get_ordered_keypoints(keypoints)
-        grasp = GraspOrthogonalTowelEdge(corners, (0, 1), 0.05)
-        return grasp
-
-    def act(self, keypoints: List[np.ndarray]) -> None:
-        if not self.is_out_of_way:
-            self.dual_arm.dual_move_tcp(self.dual_arm.left.out_of_way_pose, self.dual_arm.right.out_of_way_pose)
-            self.is_out_of_way = True
-            return
-
-        if self.finished:
-            return
-
-        if len(keypoints) != 4:
-            return
-
-        grasp = self.get_grasp(keypoints)
-        execute_grasp(grasp, self.dual_arm)
-        self.out_of_way = False
-        self.finished = True
-
-    def visualize_plan(self, image, keypoints, world_to_camera, camera_matrix):
-        image = draw_keypoints(image, keypoints, world_to_camera, camera_matrix)
-
-        corners = get_ordered_keypoints(keypoints)
-        grasp = GraspOrthogonalTowelEdge(corners, (0, 1), 0.05)
-
-        image = draw_pose(image, grasp.get_grasp_pose(), world_to_camera, camera_matrix)
-        image = draw_pose(image, grasp.get_pregrasp_pose(), world_to_camera, camera_matrix)
-
-        return image
 
 
 class Grasp(ABC):
@@ -115,6 +32,19 @@ def make_grasp(point, approach_direction, angle_with_table=60.0, grasp_depth=0.0
     return pose_from_orientation_and_position(tilted_orientation, grasp_location)
 
 
+class SimpleGrasp(Grasp):
+    def __init__(self, point, orientation):
+        self.grasp_pose = pose_from_orientation_and_position(orientation, point)
+
+    def get_grasp_pose(self):
+        return self.grasp_pose.copy()
+
+    def get_pregrasp_pose(self, offset=0.05):
+        pregrasp_pose = self.get_grasp_pose()
+        pregrasp_pose[2, -1] += 0.02
+        return pregrasp_pose
+
+
 class GraspTowelPoint(Grasp):
     def __init__(self, point, approach_direction, angle_with_table=60.0, grasp_depth=0.05):
         self.grasp_depth = grasp_depth
@@ -127,7 +57,7 @@ class GraspTowelPoint(Grasp):
 
     def get_pregrasp_pose(self, offset=0.05):
         pregrasp_pose = self.get_grasp_pose()
-        pregrasp_pose[:3, -1] -= (self.grasp_depth + offset) * self.approach_direction
+        pregrasp_pose[2, -1] += 0.02
         return pregrasp_pose
 
 
@@ -165,7 +95,7 @@ class GraspOrthogonalTowelEdge(Grasp):
 
     def get_pregrasp_pose(self, offset=0.05):
         pregrasp_pose = self.get_grasp_pose()
-        pregrasp_pose[:3, -1] -= (self.grasp_depth + offset) * self.approach_direction
+        pregrasp_pose[2, -1] += 0.02
         return pregrasp_pose
 
 

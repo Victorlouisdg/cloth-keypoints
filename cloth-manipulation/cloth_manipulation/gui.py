@@ -215,6 +215,8 @@ def visualize_pick_reorient_towel_pull(
     cv2.line(image, start_image, end_image, color=(255, 0, 255), thickness=3)
 
     draw_pose(image, grasp.get_grasp_pose(), world_to_camera, camera_matrix)
+    draw_pose(image, grasp.get_pregrasp_pose(), world_to_camera, camera_matrix)
+
     draw_pose(image, pull_end_pose, world_to_camera, camera_matrix)
 
     return image

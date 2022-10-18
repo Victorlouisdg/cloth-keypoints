@@ -81,6 +81,8 @@ class InputTransform:
 
     @staticmethod
     def reverse_transform_keypoints(keypoints: np.ndarray):
+        if keypoints.shape[0] == 0:
+            return []
         return InputTransform.crop_transform().transform_keypoints(
             InputTransform.resize_transform().transform_keypoints(keypoints)
         )
