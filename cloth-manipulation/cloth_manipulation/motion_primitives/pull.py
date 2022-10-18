@@ -105,8 +105,28 @@ class ReorientTowelPull(PullPrimitive):
         z_axis = np.array([0, 0, 1])
 
         rotated_corners = [rotate_point(corner, towel_center, z_axis, angle) for corner in corners]
-        desired_corners = [corner - towel_center for corner in rotated_corners]
-        return desired_corners
+        centered_corners = [corner - towel_center for corner in rotated_corners]
+
+        x_min, x_max, y_min, y_max = 1.0, -1.0, 1.0, -1.0
+
+        for x, y, _ in centered_corners:
+            x_min = min(x_min, x)
+            x_max = max(x_max, x)
+            y_min = min(y_min, y)
+            y_max = max(y_max, y)
+
+        bbox_corners = []
+        bbox_corners.append(np.array([x_max, y_max, 0.0]))
+        bbox_corners.append(np.array([x_min, y_max, 0.0]))
+        bbox_corners.append(np.array([x_min, y_min, 0.0]))
+        bbox_corners.append(np.array([x_max, y_min, 0.0]))
+
+        desired_corners = []
+
+        for centered_corner in centered_corners:
+            closest_bbox_corner = ReorientTowelPull.closest_point(centered_corner, bbox_corners)
+            desired_corners.append(closest_bbox_corner)
+        return desired_corners, centered_corners
 
     @staticmethod
     def select_best_pull_positions(corners, desired_corners):
@@ -130,8 +150,9 @@ class ReorientTowelPull(PullPrimitive):
         corners = get_ordered_keypoints(corners)
         self.ordered_corners = corners
 
-        desired_corners = ReorientTowelPull.get_desired_corners(corners)
+        desired_corners, centered_corners = ReorientTowelPull.get_desired_corners(corners)
         self.desired_corners = desired_corners
+        self.centered_corners = centered_corners
 
         start, end = ReorientTowelPull.select_best_pull_positions(corners, desired_corners)
         return start, end

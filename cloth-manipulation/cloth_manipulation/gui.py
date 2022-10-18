@@ -145,13 +145,22 @@ def visualize_reorient_towel_pull(image, pull: ReorientTowelPull, world_to_camer
     draw_pose(image, pull.start_pose, world_to_camera, camera_matrix)
     draw_pose(image, pull.end_pose, world_to_camera, camera_matrix)
 
-    def draw_corners(image, corners, color):
-        corners_image = [project_world_to_image_plane(corner, world_to_camera, camera_matrix) for corner in corners]
-        corners_image = np.array(corners_image, np.int32).reshape((-1, 1, 2))
-        image = cv2.polylines(image, [corners_image], True, color, thickness=2)
+    def draw_corners(image, corners, color, draw_ids=False):
+        corners_image = [
+            project_world_to_image_plane(corner, world_to_camera, camera_matrix).astype(int) for corner in corners
+        ]
+        corners_image_for_polyline = np.array(corners_image, np.int32).reshape((-1, 1, 2))
+        image = cv2.polylines(image, [corners_image_for_polyline], True, color, thickness=2)
+
+        if draw_ids:
+            for i, corner_image in enumerate(corners_image):
+                font = cv2.FONT_HERSHEY_SIMPLEX
+                image = cv2.putText(image, str(i), corner_image.T, font, 1, color, 2)
+
         return image
 
     image = draw_corners(image, pull.ordered_corners, (0, 255, 255))
+    image = draw_corners(image, pull.centered_corners, (255, 255, 0))
     image = draw_corners(image, pull.desired_corners, (0, 255, 0))
 
     for corner, desired_corner in zip(pull.ordered_corners, pull.desired_corners):
