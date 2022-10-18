@@ -12,6 +12,7 @@ from cloth_manipulation.controllers import FoldTowelController, PickReorientTowe
 from cloth_manipulation.gui import Panel, draw_cloth_transform_rectangle
 from cloth_manipulation.hardware.setup_hardware import setup_fake_victor_louise
 from cloth_manipulation.input_transform import InputTransform
+from cloth_manipulation.motion_primitives.grasp import GraspOrthogonalTowelEdgeController
 from cloth_manipulation.observers import KeypointObserver
 
 keypoint_observer = KeypointObserver()
@@ -45,8 +46,9 @@ victor_louise = setup_fake_victor_louise()
 reorient_towel_controller = ReorientTowelController(victor_louise)
 fold_towel_controller = FoldTowelController(victor_louise)
 pick_reorient_towel_controller = PickReorientTowelController(victor_louise)
+grasp_controler = GraspOrthogonalTowelEdgeController(victor_louise)
 
-controllers = [reorient_towel_controller, fold_towel_controller]  # , pick_reorient_towel_controller]
+controllers = [grasp_controler, reorient_towel_controller, fold_towel_controller]  # , pick_reorient_towel_controller]
 
 for controller in controllers:
     controller.is_out_of_way = True

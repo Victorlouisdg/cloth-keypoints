@@ -2,6 +2,13 @@ import numpy as np
 from scipy.spatial.transform import Rotation
 
 
+def pose_from_orientation_and_position(orientation, position):
+    matrix = np.identity(4)
+    matrix[0:3, 0:3] = orientation
+    matrix[0:3, 3] = position
+    return matrix
+
+
 def angle_2D(v0, v1):
     # TODO: document.
     x1, y1, *_ = v0
