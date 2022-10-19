@@ -19,7 +19,9 @@ keypoint_observer = KeypointObserver()
 
 # resolution = sl.RESOLUTION.HD720
 
-output_dir = Path(__file__).parent / "results" / datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
+output_dir = (
+    Path(__file__).parent / "results_grasp_point_detection" / datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
+)
 os.makedirs(output_dir)
 # output_csv = output_dir / "grasp_points.csv"
 # csv_header = ["trial", ]

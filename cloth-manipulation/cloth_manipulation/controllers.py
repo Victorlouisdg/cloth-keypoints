@@ -318,7 +318,9 @@ def execute_pick_and_reorient(grasp, pull_end_pose, robot, robot_out_of_way):
     temp_dual.dual_move_tcp(robot.home_pose, robot_out_of_way.out_of_way_pose)
 
     robot.gripper.close()
-    robot.move_tcp_linear(grasp.get_pregrasp_pose(), speed=robot.LINEAR_SPEED, acceleration=robot.LINEAR_ACCELERATION)
+    robot.move_tcp_linear(
+        grasp.get_pregrasp_pose(), speed=2 * robot.LINEAR_SPEED, acceleration=2 * robot.LINEAR_ACCELERATION
+    )
 
     robot.gripper.open()
 

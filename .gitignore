@@ -1,5 +1,7 @@
 src/
 **results/
+**results_folding/
+**results_grasp_point_detection/
 **assets/
 **egg-info/
 **__pycache__/

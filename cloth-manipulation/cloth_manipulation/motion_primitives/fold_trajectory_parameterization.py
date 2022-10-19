@@ -45,7 +45,7 @@ class FoldTrajectory:
     def get_pregrasp_pose(self, offest=0.05):
         raise NotImplementedError
 
-    def get_retreat_pose(self, offest=0.05):
+    def get_retreat_pose(self, offest=0.06):
         raise NotImplementedError
 
     def get_fold_path(self, n_waypoints: int = 50) -> List[np.ndarray]:
@@ -109,7 +109,7 @@ class CircularFoldTrajectory(FoldTrajectory):
         pregrasp_pose[:3, -1] += -offset * start_to_end
         return pregrasp_pose
 
-    def get_fold_retreat_pose(self, offset=0.05):
+    def get_fold_retreat_pose(self, offset=0.06):
         self._fold_pose(0)
         end_pose = self._fold_pose(1)
 

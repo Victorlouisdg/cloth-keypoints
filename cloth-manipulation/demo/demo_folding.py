@@ -14,7 +14,7 @@ from camera_toolkit.zed2i import Zed2i
 from cloth_manipulation.calibration import load_saved_calibration
 from cloth_manipulation.camera_mapping import CameraMapping
 from cloth_manipulation.controllers import ReorientAndFoldTowelController
-from cloth_manipulation.gui import FourPanels, Panel
+from cloth_manipulation.gui import FourPanels, Panel, draw_cloth_transform_rectangle
 from cloth_manipulation.hardware.setup_hardware import setup_victor_louise
 from cloth_manipulation.input_transform import InputTransform
 from cloth_manipulation.observers import KeypointObserver
@@ -27,7 +27,7 @@ world_to_camera = load_saved_calibration()
 
 # resolution = sl.RESOLUTION.HD720
 
-output_dir = Path(__file__).parent / "results" / datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
+output_dir = Path(__file__).parent / "results_folding" / datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
 os.makedirs(output_dir)
 # output_csv = output_dir / "grasp_points.csv"
 # csv_header = ["trial", ]
@@ -126,6 +126,8 @@ def control_loop(keypoint_observer):
         if _mode == Modes.FOLDING and not prev_mode == Modes.FOLDING:
             trial += 1
 
+        image = draw_cloth_transform_rectangle(image)
+
         buffer = np.zeros_like(top_left_panel.image_buffer)
         Panel.fit_image_into_buffer(image, buffer)
         text = f"{Modes(_mode).name}"
@@ -140,6 +142,11 @@ def control_loop(keypoint_observer):
 
         if _mode == Modes.FOLDING:
             controller.act(keypoints_in_world)
+            if controller.finished:
+                output_image = keypoint_observer.transformed_image
+                output_image = Zed2i.image_shape_torch_to_opencv(output_image)
+                output_image = output_image.copy()
+                cv2.imwrite(str(output_dir / f"trial_output_{trial}.png"), output_image)
 
         prev_mode = _mode
 
