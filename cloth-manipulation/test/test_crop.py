@@ -3,7 +3,7 @@ import cv2
 import pyzed.sl as sl
 from camera_toolkit.zed2i import Zed2i
 from cloth_manipulation.camera_mapping import CameraMapping
-from cloth_manipulation.gui import draw_center_circle, draw_cloth_transform_rectangle
+from cloth_manipulation.gui import draw_cloth_transform_rectangle
 from cloth_manipulation.input_transform import InputTransform
 
 resolution = sl.RESOLUTION.HD720
@@ -25,13 +25,23 @@ print("Press q to quit.")
 
 while True:
     image = zed.get_rgb_image()
+    transformed_image = InputTransform.transform_image(image)
+
     image = zed.image_shape_torch_to_opencv(image)
+    transformed_image = zed.image_shape_torch_to_opencv(transformed_image)
     image = image.copy()
+    transformed_image = transformed_image.copy()
+
     image = draw_cloth_transform_rectangle(image)
-    image = draw_center_circle(image)
+
+    # image = draw_center_circle(image)
     cv2.imshow("Image", image)
+    cv2.imshow("Transformed Image", transformed_image)
+
     key = cv2.waitKey(10)
     if key == ord("q"):
         cv2.destroyAllWindows()
         zed.close()
         break
+    if key == ord("s"):
+        cv2.imwrite("image.png", transformed_image)
