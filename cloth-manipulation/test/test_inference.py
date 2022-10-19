@@ -39,7 +39,7 @@ while True:
     image = zed.get_rgb_image()
 
     keypoints = keypoint_observer.observe(image)
-    visualization_image = keypoint_observer.visualize_last_observation()
+    visualization_image = keypoint_observer.visualize_last_observation(competition_format=True)
 
     image = zed.image_shape_torch_to_opencv(image)
     image = image.copy()

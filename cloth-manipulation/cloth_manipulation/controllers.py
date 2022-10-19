@@ -54,7 +54,9 @@ class ReorientTowelController(DualArmController):
 
         pull = ReorientTowelPull(keypoints, self.dual_arm)
         if pull.average_corner_error() <= self.stopping_error:
-            print(f"{__class__}: success, stopping because average corner error = {pull.average_corner_error()}")
+            print(
+                f"{__class__.name}: success, stopping because average corner error = {pull.average_corner_error():.2f}"
+            )
             self.finished = True
             return
 
@@ -164,6 +166,10 @@ class ReorientAndFoldTowelController(DualArmController):
         self.fold_controller = FoldTowelController(dual_arm)
         self.second_round_started = False
 
+    @property
+    def is_out_of_way(self):
+        return self.reorient_controller.is_out_of_way or self.fold_controller.is_out_of_way
+
     def act(self, keypoints: List[np.ndarray]) -> None:
         if self.finished:
             return
@@ -185,6 +191,7 @@ class ReorientAndFoldTowelController(DualArmController):
             self.second_round_started = True
             return
 
+        self.dual_arm.dual_move_tcp(self.dual_arm.left.out_of_way_pose, self.dual_arm.right.out_of_way_pose)
         self.finished = True
 
     def visualize_plan(self, image, keypoints, world_to_camera, camera_matrix):
@@ -293,7 +300,6 @@ class PickReorientTowelController(DualArmController):
             self.finished = True
             return
 
-        print(f"Using {robot.name}")
         execute_pick_and_reorient(grasp, pull_end_pose, robot, robot_out_of_way)
         self.is_out_of_way = False
 

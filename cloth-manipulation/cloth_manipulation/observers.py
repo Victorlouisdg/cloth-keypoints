@@ -34,6 +34,9 @@ class KeypointObserver:
         if competition_format:
             show_heatmap = False
 
+        if len(self.keypoints) == 0:
+            return self.transformed_image.copy()
+
         if show_heatmap:
             overlayed = overlay_image_with_heatmap(self.image_batched, self.heatmap_channel_batched)
             overlayed = overlayed.squeeze(0).numpy()
@@ -44,11 +47,28 @@ class KeypointObserver:
         image = Zed2i.image_shape_torch_to_opencv(image)
         image = image.copy()
 
+        if len(self.keypoints) >= 2:
+            center = np.mean(np.array(self.keypoints, float), axis=0)
+        else:
+            # fallback to image center if not enough keypoints
+            h, w, _ = image.shape
+            center = np.array([w / 2, h / 2])
+        approach_points = []
+
         for keypoint in self.keypoints:
             if competition_format:
+                center_to_keypoint = keypoint - center
+                pixel_length = 25
+                approach_vector = pixel_length * center_to_keypoint / np.linalg.norm(center_to_keypoint)
+                approach_point = (keypoint + approach_vector).astype(int)
+                approach_points.append(approach_point)
+                image = cv2.line(image, keypoint, approach_point, (0, 0, 255), thickness=1)
+
                 image = cv2.circle(image, keypoint, 1, (0, 0, 255), thickness=1)
                 image = cv2.circle(image, keypoint, 7, (0, 0, 255), thickness=1, lineType=cv2.LINE_AA)
             else:
                 image = cv2.circle(image, keypoint, 1, (0, 255, 0), thickness=1)
                 image = cv2.circle(image, keypoint, 10, (0, 255, 0))
+
+        self.approach_points = approach_points
         return image

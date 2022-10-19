@@ -111,6 +111,10 @@ def control_loop(keypoint_observer):
                 cv2.imwrite(str(output_dir / f"trial_input_{trial}.png"), image)
                 image = keypoint_observer.visualize_last_observation(competition_format=True)
                 cv2.imwrite(str(output_dir / f"trial_annotated_{trial}.png"), image)
+
+                keypoint_observer.keypoints
+                keypoint_observer.approach_points
+                # TODO SAVE TO CSV
             else:
                 image = keypoint_observer.visualize_last_observation(competition_format=True)
         else:

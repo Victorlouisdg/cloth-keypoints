@@ -78,6 +78,7 @@ mode = 0  # Modes.CAMERA_FEED
 prev_mode = None
 
 already_detected = False
+start_image_saved = False
 
 
 def control_loop(keypoint_observer):
@@ -95,6 +96,7 @@ def control_loop(keypoint_observer):
     global camera_matrix
     global prev_mode
     global victor_louise
+    global start_image_saved
 
     while not stop_control_thread:
         if init_image is not None:
@@ -125,6 +127,7 @@ def control_loop(keypoint_observer):
 
         if _mode == Modes.FOLDING and not prev_mode == Modes.FOLDING:
             trial += 1
+            start_image_saved = False
 
         image = draw_cloth_transform_rectangle(image)
 
@@ -141,12 +144,20 @@ def control_loop(keypoint_observer):
         top_left_panel.image_buffer[:, :, :] = buffer[:, :, :]
 
         if _mode == Modes.FOLDING:
+            if not start_image_saved and controller.is_out_of_way:
+                start_image = keypoint_observer.transformed_image
+                start_image = Zed2i.image_shape_torch_to_opencv(start_image)
+                start_image = start_image.copy()
+                cv2.imwrite(str(output_dir / f"trial_start_{trial}.png"), start_image)
+                start_image_saved = True
+
             controller.act(keypoints_in_world)
             if controller.finished:
-                output_image = keypoint_observer.transformed_image
-                output_image = Zed2i.image_shape_torch_to_opencv(output_image)
-                output_image = output_image.copy()
-                cv2.imwrite(str(output_dir / f"trial_output_{trial}.png"), output_image)
+                keypoint_observer.observe(control_image)
+                final_image = keypoint_observer.transformed_image
+                final_image = Zed2i.image_shape_torch_to_opencv(final_image)
+                final_image = final_image.copy()
+                cv2.imwrite(str(output_dir / f"trial_final_{trial}.png"), final_image)
 
         prev_mode = _mode
 
