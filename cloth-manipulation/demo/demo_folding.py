@@ -148,7 +148,7 @@ def control_loop(keypoint_observer):  # noqa: C901
         top_left_panel.image_buffer[:, :, :] = buffer[:, :, :]
 
         if _mode == Modes.FOLDING:
-            if not start_image_saved and controller.is_out_of_way:
+            if not start_image_saved and controller is not None and controller.is_out_of_way:
                 start_image = keypoint_observer.transformed_image
                 start_image = Zed2i.image_shape_torch_to_opencv(start_image)
                 start_image = start_image.copy()
@@ -156,14 +156,14 @@ def control_loop(keypoint_observer):  # noqa: C901
                 start_image_saved = True
 
             controller.act(keypoints_in_world)
-            if controller.finished:
+            if controller is not None and controller.finished:
                 keypoint_observer.observe(control_image)
                 final_image = keypoint_observer.transformed_image
                 final_image = Zed2i.image_shape_torch_to_opencv(final_image)
                 final_image = final_image.copy()
                 cv2.imwrite(str(output_dir / f"trial_final_{trial}.png"), final_image)
 
-            if not intermediate_image_saved and controller.second_round_started:
+            if not intermediate_image_saved and controller is not None and controller.second_round_started:
                 keypoint_observer.observe(control_image)
                 intermediate_image = keypoint_observer.transformed_image
                 intermediate_image = Zed2i.image_shape_torch_to_opencv(intermediate_image)
@@ -241,10 +241,11 @@ while True:
     if key == ord("c"):
         mode = Modes.CAMERA_FEED
     if key == ord("r"):
+        if mode != Modes.FOLDING:
+            trial += 1
         mode = Modes.CAMERA_FEED
         controller = None
-        control_thread = threading.Thread(target=control_loop, args=(keypoint_observer,))
-        control_thread.start()
+        print(f"Skipping trial {trial}")
 
     end_time = time.time()
     loop_time = end_time - start_time

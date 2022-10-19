@@ -270,7 +270,7 @@ class PickReorientTowelController(DualArmController):
         base = robot.robot_in_world_pose[:3, -1]
         end_diagonal_unit = end_diagonal / np.linalg.norm(end_diagonal)
         end_location = pull.end + grasp_depth * end_diagonal_unit
-        orientation = ReorientTowelPull.tilted_pull_orientation(end_location, base)
+        orientation = ReorientTowelPull.tilted_pull_orientation(end_location, base, tilt_angle=20)
         pull_end_pose = pose_from_orientation_and_position(orientation, end_location)
 
         start_orientation = ReorientTowelPull.tilted_pull_orientation(end_location, base, tilt_angle=0)
