@@ -1,3 +1,4 @@
+import csv
 import datetime
 import os
 import threading
@@ -65,11 +66,11 @@ class Modes(IntEnum):
 
 
 mode = 0  # Modes.CAMERA_FEED
-
 already_detected = False
 
 
-def control_loop(keypoint_observer):
+# noqa: C901
+def control_loop(keypoint_observer):  # noqa: C901
     global stop_control_thread
     global control_image_index
     global control_image
@@ -112,9 +113,16 @@ def control_loop(keypoint_observer):
                 image = keypoint_observer.visualize_last_observation(competition_format=True)
                 cv2.imwrite(str(output_dir / f"trial_annotated_{trial}.png"), image)
 
-                keypoint_observer.keypoints
-                keypoint_observer.approach_points
-                # TODO SAVE TO CSV
+                csv_path = str(output_dir / f"trial_grasp_points_{trial}.csv")
+                with open(csv_path, "w") as file:
+                    writer = csv.writer(file)
+                    for keypoint, approach_point in zip(
+                        keypoint_observer.keypoints, keypoint_observer.approach_points
+                    ):
+                        row = [keypoint[0], keypoint[1], approach_point[0], approach_point[1]]
+                        row = [int(coord) for coord in row]
+                        writer.writerow(row)
+
             else:
                 image = keypoint_observer.visualize_last_observation(competition_format=True)
         else:

@@ -79,9 +79,11 @@ prev_mode = None
 
 already_detected = False
 start_image_saved = False
+intermediate_image_saved = False
 
 
-def control_loop(keypoint_observer):
+# noqa: C901
+def control_loop(keypoint_observer):  # noqa: C901
     global stop_control_thread
     global control_image_index
     global control_image
@@ -97,6 +99,7 @@ def control_loop(keypoint_observer):
     global prev_mode
     global victor_louise
     global start_image_saved
+    global intermediate_image_saved
 
     while not stop_control_thread:
         if init_image is not None:
@@ -128,6 +131,7 @@ def control_loop(keypoint_observer):
         if _mode == Modes.FOLDING and not prev_mode == Modes.FOLDING:
             trial += 1
             start_image_saved = False
+            intermediate_image_saved = False
 
         image = draw_cloth_transform_rectangle(image)
 
@@ -158,6 +162,14 @@ def control_loop(keypoint_observer):
                 final_image = Zed2i.image_shape_torch_to_opencv(final_image)
                 final_image = final_image.copy()
                 cv2.imwrite(str(output_dir / f"trial_final_{trial}.png"), final_image)
+
+            if not intermediate_image_saved and controller.second_round_started:
+                keypoint_observer.observe(control_image)
+                intermediate_image = keypoint_observer.transformed_image
+                intermediate_image = Zed2i.image_shape_torch_to_opencv(intermediate_image)
+                intermediate_image = intermediate_image.copy()
+                cv2.imwrite(str(output_dir / f"trial_intermediate_{trial}.png"), intermediate_image)
+                intermediate_image_saved = True
 
         prev_mode = _mode
 

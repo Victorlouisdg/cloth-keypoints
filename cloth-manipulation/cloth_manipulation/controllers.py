@@ -188,6 +188,7 @@ class ReorientAndFoldTowelController(DualArmController):
         if not self.second_round_started:
             self.reorient_controller.finished = False
             self.fold_controller.finished = False
+            self.dual_arm.dual_move_tcp(self.dual_arm.left.out_of_way_pose, self.dual_arm.right.out_of_way_pose)
             self.second_round_started = True
             return
 
